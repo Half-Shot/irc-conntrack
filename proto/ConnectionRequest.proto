@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+enum ConnectionState {
+    Connect = 0;
+    Established = 1;
+    Lost = 2;
+    Closing = 3;
+    Closed = 4;
+}
+
+message ConnectionRequest {
+    string network = 1;
+    ConnectionState state = 2;
+}

@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+enum ResponseStatus {
+    Ok = 0;
+    Error = 1;
+    Unknown = 2;
+}
+
+message Response {
+    ResponseStatus status = 1;
+    string error = 2;
+}

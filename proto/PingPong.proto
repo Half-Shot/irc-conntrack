@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+message Ping {
+    uint64 timestamp_ms = 1;
+}

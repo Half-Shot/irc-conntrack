@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+message AuthenticateRequest {
+    string secret = 1;
+}

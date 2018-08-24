@@ -1,14 +1,18 @@
-extern crate protobuf;
+extern crate actix;
+extern crate actix_web;
+#[macro_use] extern crate log;
+extern crate env_logger;
 
-use std::fmt::{Display, Formatter, Error};
-mod proto;
-use proto::PingPong::Ping;
-use protobuf::Message;
+mod rest;
+mod irc;
+use irc::ConnectionTracker;
+use rest::IrcRestServer;
 
 fn main() {
-    let mut my_ping = Ping::new();
-    my_ping.set_timestamp_ms(64);
-    let mut bytes = Vec::<u8>::new();
-    my_ping.write_to_vec(&mut bytes);
-    println!("{:?}", bytes);
+    std::env::set_var("RUST_LOG", "actix_web=info");
+    env_logger::init();
+    println!("Starting irc-conntrack");
+    let tracker = ConnectionTracker::new();
+    let srv = IrcRestServer::new("localhost:9995".to_string(), tracker);
+    srv.start();
 }

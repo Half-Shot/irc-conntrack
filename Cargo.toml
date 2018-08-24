@@ -1,9 +1,0 @@
-[package]
-name = "irc-conntrack"
-version = "0.1.0"
-authors = ["Will Hunt <will@half-shot.uk>"]
-
-[dependencies]
-bytes = "0.4"
-irc = "0.13"
-protobuf = { version = "~2.0", features = ["with-bytes"] }

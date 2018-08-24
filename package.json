@@ -1,0 +1,32 @@
+{
+  "name": "irc-conntrack",
+  "version": "0.0.1",
+  "description": "A suitably dumb irc connection tracker.",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node lib/src/Program.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Half-Shot/irc-conntrack.git"
+  },
+  "keywords": [],
+  "author": "Will Hunt <will@half-shot.uk>",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/Half-Shot/irc-conntrack/issues"
+  },
+  "homepage": "https://github.com/Half-Shot/irc-conntrack",
+  "devDependencies": {
+    "@types/chai": "^4.1.4",
+    "@types/mocha": "^5.2.5",
+    "chai": "^4.1.2"
+  },
+  "dependencies": {
+    "@types/express": "^4.16.0",
+    "express": "^4.16.3",
+    "typescript": "^3.0.1"
+  }
+}

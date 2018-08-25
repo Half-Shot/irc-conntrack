@@ -6,6 +6,6 @@ export class ConnectionTracker {
     }
 
     public getConnectionsForServer(server: string, detail: string): any[] {
-        return 
+        return [];
     }
 }

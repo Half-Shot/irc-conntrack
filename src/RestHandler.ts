@@ -3,11 +3,18 @@ import * as expressWs from "express-ws";
 import { Application } from "express-ws";
 import { Request, Response, NextFunction } from "express";
 import { ConnectionTracker } from "./ConnectionTracker";
-import { ICConfig } from "./Config";
-import { IRoute } from "express-serve-static-core";
+import { Config } from "./Config";
 import { IErrorResponse, ERRCODES } from "./Rest/ErrorResponse";
 import * as Ws from "ws";
 import { WebsocketHandler } from "./WebsocketHandler";
+import { Log } from "./Log";
+import { IConnectionsResponse } from "./Rest/ConnectionsResponse";
+import { IOpenResponse } from "./Rest/OpenResponse";
+import { IrcConnectionOpts } from "./Irc/IrcClient";
+import { http } from "winston";
+
+const log = new Log("RestHandler");
+const logHttp = new Log("http");
 
 export class RestHandler {
     private app?: Application;
@@ -15,15 +22,17 @@ export class RestHandler {
     constructor(
         private connTracker: ConnectionTracker,
         private wsHandler: WebsocketHandler,
-        private config: ICConfig
+        private config: Config
     ) {
 
     }
 
     public start() {
         let app = express();        
-        this.app = expressWs(app).app;        
-        this.app.use(this.checkToken.bind(this));
+        this.app = expressWs(app).app;
+        app.use(express.json());
+        this.app.use(this.logRequest.bind(this));
+        this.app.use(this.checkToken.bind(this));   
         this.app.get("/_irc/connections/:server", this.getConnections.bind(this));
         this.app.get("/_irc/connections/:server/:id", this.getConnection.bind(this));
         this.app.post("/_irc/connections/:server/open", this.openConnection.bind(this));
@@ -35,9 +44,9 @@ export class RestHandler {
     }
 
     private getConnections(req: Request, res: Response) {
-        const detail = req.query["detail"] || "simple";
-        this.connTracker.getConnectionsForServer(req.query["server"], detail);
-        throw Error("Not implemented yet");
+        const detail = req.query["detail"] || "ids";
+        let conns = this.connTracker.getConnectionsForServer(req.query["server"], detail);
+        res.send({connections: conns} as IConnectionsResponse);
     }
 
     private getConnection(req: Request, res: Response) {
@@ -45,7 +54,18 @@ export class RestHandler {
     }
 
     private openConnection(req: Request, res: Response) {
-        throw Error("Not implemented yet");
+        console.log(req.body);
+        this.connTracker.openConnection(req.params["server"], 
+            req.body as IrcConnectionOpts
+        ).then((client_id: string) => {
+            res.statusCode = 200;
+            res.send({
+                client_id,
+            } as IOpenResponse)
+        }).catch((err: any) => {
+            res.statusCode = 500;
+            res.send(err);
+        });
     }
 
     private disconnectConnection(req: Request, res: Response) {
@@ -74,22 +94,31 @@ export class RestHandler {
         }
 
         if (token === undefined) {
+            logHttp.warn("rejecting because token was not given");
             res.statusCode = 400;
             res.send({
                 errcode: ERRCODES.missingToken,
                 error: "No token given",
             } as IErrorResponse);
+            return;
         }
 
         if (this.config.accessToken === token) {
             next();
         } else {
+            logHttp.warn("rejecting because token was invalid");
             res.statusCode = 401;
             res.send({
                 errcode: ERRCODES.badToken,
                 error: "Token was invalid",
             } as IErrorResponse);        
         }
+    }
+
+    private logRequest(req: Request, res: Response, next: NextFunction) {
+        const body = req.body === undefined ? "" : req.body;
+        logHttp.verbose(`${req.hostname}:${req.connection.remotePort} ${req.method} ${req.path} ${body}`);
+        next();
     }
 }
  

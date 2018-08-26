@@ -1,10 +1,15 @@
 import { RestHandler } from "./RestHandler";
 import { ConnectionTracker } from "./ConnectionTracker";
-import { ICConfig } from "./Config";
+import { Config } from "./Config";
 import { WebsocketHandler } from "./WebsocketHandler";
+import { Log } from "./Log";
+
+const log = new Log("main");
 
 function main() {
-    const config = new ICConfig();
+    log.info("Starting IrcConntrack")
+    const config = new Config();
+    log.info("Read config");
     const websocketHandler = new WebsocketHandler(
         config,
     );
@@ -17,6 +22,7 @@ function main() {
         websocketHandler,
         config,
     );
+    log.info("Starting rest handler");
     rest.start();
 }
 

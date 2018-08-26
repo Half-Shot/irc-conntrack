@@ -4,7 +4,7 @@ import { IrcClient } from "../../src/Irc/IrcClient";
 describe("IrcClient", () => {
    describe("constructor", () => {
       it("should construct", () => {
-         const c = new IrcClient();
+         //const c = new IrcClient();
       });
    });
 });

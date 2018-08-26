@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node lib/src/Program.js",
-    "test": "npm run build && mocha dist/test/**",
-    "coverage": "npm run build && nyc mocha dist/test/**"
+    "start": "node build/src/Program.js",
+    "test": "npm run build && mocha build/test/*.js",
+    "coverage": "npm run build && nyc mocha build/test/*.js"
   },
   "repository": {
     "type": "git",

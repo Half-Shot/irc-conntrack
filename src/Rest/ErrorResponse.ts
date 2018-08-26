@@ -5,4 +5,6 @@ export interface IErrorResponse {
 
 export const ERRCODES = {
     missingParameter: "IC_MISSING_PARAM",
+    missingToken: "IC_MISSING_TOKEN",
+    badToken: "IC_BAD_TOKEN",
 };

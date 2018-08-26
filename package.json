@@ -37,5 +37,29 @@
     "nyc": "^12.0.2",
     "typescript": "^3.0.1",
     "ws": "^6.0.0"
+  },
+  "nyc": {
+    "check-coverage": true,
+    "per-file": true,
+    "lines": 90,
+    "statements": 90,
+    "functions": 90,
+    "branches": 90,
+    "include": [
+      "build/src/**/*.js"
+    ],
+    "exclude": [
+      "build/test/**/*"
+    ],
+    "reporter": [
+      "lcov",
+      "text-summary"
+    ],
+    "extension": [
+      ".js"
+    ],
+    "cache": true,
+    "all": true,
+    "report-dir": "./.nyc"
   }
 }

@@ -1,17 +1,16 @@
 import * as express from "express";
 import * as expressWs from "express-ws";
 import { Application } from "express-ws";
+import * as Ws from "ws";
 import { Request, Response, NextFunction } from "express";
 import { ConnectionTracker } from "./ConnectionTracker";
 import { Config } from "./Config";
 import { IErrorResponse, ERRCODES } from "./Rest/ErrorResponse";
-import * as Ws from "ws";
 import { WebsocketHandler } from "./WebsocketHandler";
 import { Log } from "./Log";
 import { IConnectionsResponse } from "./Rest/ConnectionsResponse";
 import { IOpenResponse } from "./Rest/OpenResponse";
 import { IrcConnectionOpts } from "./Irc/IrcClient";
-import { http } from "winston";
 
 const log = new Log("RestHandler");
 const logHttp = new Log("http");
@@ -94,7 +93,7 @@ export class RestHandler {
         let token;
         const authHeader = req.header("Authorization");
         if (authHeader !== undefined) {
-            token = authHeader.substr("Beaer ".length);
+            token = authHeader.substr("Bearer ".length);
         } else {
             token = req.query["access_token"];
         }

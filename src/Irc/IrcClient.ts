@@ -3,6 +3,7 @@ import { ConfigServer } from "../Config";
 import { Log } from "../Log";
 import { TcpSocketConnectOpts } from "net";
 import { ERRCODES, IErrorResponse} from "../Rest/ErrorResponse";
+import { IIrcSupported } from "./IrcSupported";
 
 export interface IrcConnectionOpts {
     nicknames: string | string[],
@@ -10,11 +11,15 @@ export interface IrcConnectionOpts {
 }
 
 export class IrcClient extends Socket {
+    private supported: IIrcSupported;
     private log: Log;
 
     constructor(private uuid: string, private ircOpts: IrcConnectionOpts, opts?: SocketConstructorOpts) {
        super(opts);
        this.log = new Log("Cli#"+this.uuid.substr(0,12));
+        this.supported = {
+            casemapping: "",
+        };
     }
 
     public initiate(serverName: string, server: ConfigServer) : Promise<undefined> {

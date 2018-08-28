@@ -1,30 +1,80 @@
 /* istanbul ignore file */
+import * as Yaml from 'js-yaml';
+import * as fs from 'fs';
+import { Log } from "./Log";
+
+let log:Log;
+
 export class Config {
     private servers: Map<string,any>;
 
-    constructor() {
+    private constructor(private doc: any) {
+        if (!log) {
+            log = new Log("Config");
+        }
+
         this.servers = new Map();
-        this.servers.set("test", new ConfigServer());
+        this.validateDocument();
+        this.doc.servers.forEach((serverDoc: any) => {
+            const server = new ConfigServer(serverDoc);
+            this.servers.set(serverDoc.name, server);
+        });
+    }
+
+    public static parseFile(filename: string): Config {
+        if (!log) {
+            log = new Log("Config");
+        }
+
+        const contents = fs.readFileSync(filename, 'utf-8');
+        log.info(`Read from ${filename}`);
+        return Config.parseYaml(contents);
+    }
+
+    public static parseYaml(yamlString: string): Config {
+        if (!log) {
+            log = new Log("Config");
+        }
+
+        return new Config(Yaml.load(yamlString));
+    }
+
+    private validateDocument() {
+        if (this.doc["servers"] === undefined || this.doc.servers.length < 1) {
+            throw new Error("'servers' is empty or not defined.");
+        }
+        if (!this.doc["access-token"]) {
+            throw new Error("'access-token' is not defined.");
+        }
+    }
+
+    public setOption(key: string, value: string|number) {
+        log.info(`Set ${key}=${value} from cli args`);
+        try {
+            // TODO: Take out this hack!
+            value = parseInt(value as string, 10);
+        } catch {}
+        this.doc[key] = value;
     }
 
     public get bindAddress(): string {
-        return "127.0.0.1";
+        return this.doc["bind-address"] || "127.0.0.1";
     }
 
     public get bindPort(): number {
-        return 9000;
+        return this.doc["bind-port"] || 9000;
     }
 
     public get backlogLimit(): number {
-        return 10;
+        return this.doc["rest-backlog-limit"] || 10;
     }
 
     public get maximumWebsocketConnections(): number {
-        return 5;
+        return this.doc["max-ws-connections"] || 5;
     }
 
     public get accessToken(): string {
-        return "c3RyaW5nIDMwIGNoYXJhY3RlcnM=";
+        return this.doc["access-token"];
     }
 
     public get logging(): ConfigLogging {
@@ -37,8 +87,18 @@ export class Config {
 }
 
 export class ConfigServer {
+    constructor(private doc: any) {
+        this.validateDocument();
+    }
+
+    private validateDocument() {
+        if (this.doc["addresses"] === undefined || this.doc.addresses.length < 1) {
+            throw new Error(`${this.doc.name}.addresses is empty or not defined`);
+        }
+    }
+
     public get addresses(): string[] {
-        return ["localhost:6667"]
+        return this.doc["addresses"];
     }
 
     public get addressTuple(): {port: number, host: string}[] {
@@ -52,7 +112,11 @@ export class ConfigServer {
     }
 
     public get isIpv6(): boolean {
-        return false;
+        return this.doc["ipv6"] || false;
+    }
+
+    public get maxConnections(): number {
+        return this.doc["max-connections"] || 0;
     }
 }
 

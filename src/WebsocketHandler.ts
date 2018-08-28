@@ -34,12 +34,14 @@ export class WebsocketHandler extends EventEmitter {
             this.dropConnection(this.connections.keys().next().value);
         }
 
+        this.emit("connected", host, connection);
+
 
         // Bind handlers
-        connection.onopen = this.onOpen;
-        connection.onerror = this.onError;
-        connection.onclose = this.onClose;
+        connection.onopen = this.onOpen.bind(this);
         connection.onmessage = this.onMessage.bind(this);
+        connection.onerror = this.onError.bind(this);
+        connection.onclose = this.onClose.bind(this);
     }
 
     public dropConnection(host: string) {
@@ -47,12 +49,15 @@ export class WebsocketHandler extends EventEmitter {
             throw new Error(`${host} is not connected`);
         }
         const conn = this.connections.get(host) as Ws;
+        this.emit("dropping", host, conn);
         conn.terminate();
+        this.emit("dropped", host);
+
     }
 
-    private onIrcMessage(event: string, ...args: any[]) {
+    public onIrcMessage(event: string, client_id: string, msg: IMessage) {
         this.connections.forEach((cn) => {
-            cn.send({event, args});
+            cn.send({event, client_id, msg});
         })
     }
 

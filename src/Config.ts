@@ -5,19 +5,25 @@ import { Log } from "./Log";
 
 let log:Log;
 
-export class Config {
-    private servers: Map<string,any>;
+const PROTECTED_FIELDS = [
+        "bind-address",
+        "bind-port",
+        "backlog-limit"
+];
 
-    private constructor(private doc: any) {
+export class Config {
+    private serverMap: Map<string,any>;
+
+    private constructor(private doc: any, readonly filename?: string) {
         if (!log) {
             log = new Log("Config");
         }
 
-        this.servers = new Map();
+        this.serverMap = new Map();
         this.validateDocument();
         this.doc.servers.forEach((serverDoc: any) => {
             const server = new ConfigServer(serverDoc);
-            this.servers.set(serverDoc.name, server);
+            this.serverMap.set(serverDoc.name, server);
         });
     }
 
@@ -28,15 +34,15 @@ export class Config {
 
         const contents = fs.readFileSync(filename, 'utf-8');
         log.info(`Read from ${filename}`);
-        return Config.parseYaml(contents);
+        return Config.parseYaml(contents, filename);
     }
 
-    public static parseYaml(yamlString: string): Config {
+    public static parseYaml(yamlString: string, filename?: string): Config {
         if (!log) {
             log = new Log("Config");
         }
 
-        return new Config(Yaml.load(yamlString));
+        return new Config(Yaml.load(yamlString), filename);
     }
 
     private validateDocument() {
@@ -49,11 +55,7 @@ export class Config {
     }
 
     public setOption(key: string, value: string|number) {
-        log.info(`Set ${key}=${value} from cli args`);
-        try {
-            // TODO: Take out this hack!
-            value = parseInt(value as string, 10);
-        } catch {}
+        log.info(`Set ${key}=${value}`);
         this.doc[key] = value;
     }
 
@@ -62,15 +64,15 @@ export class Config {
     }
 
     public get bindPort(): number {
-        return this.doc["bind-port"] || 9000;
+        return Number.parseInt(this.doc["bind-port"]) || 9000;
     }
 
     public get backlogLimit(): number {
-        return this.doc["rest-backlog-limit"] || 10;
+        return Number.parseInt(this.doc["backlog-limit"]) || 10;
     }
 
     public get maximumWebsocketConnections(): number {
-        return this.doc["max-ws-connections"] || 5;
+        return Number.parseInt(this.doc["max-ws-connections"]) || 5;
     }
 
     public get accessToken(): string {
@@ -84,8 +86,38 @@ export class Config {
     public get rawDocument(): any {
         return this.doc;
     }
+
+    public applyConfig(newCfg: Config) {
+        let droppedServers = new Set([...this.serverMap.keys()]);
+        newCfg.servers.forEach((server: ConfigServer) => {
+            this.serverMap.set(server.name, server);
+            droppedServers.delete(server.name);
+        });
+        droppedServers.forEach((dropped) => {
+            this.serverMap.delete(dropped);
+            log.warn(`Server '${dropped}' has been dropped from the config. No new connections can be made to it.`);
+        });
+
+        Object.keys(newCfg.rawDocument).forEach((key) => {
+            if (key === "servers" || newCfg.rawDocument[key] === this.doc[key]) {
+                return;
+            }
+            if (PROTECTED_FIELDS.includes(key)) {
+                log.warn(`'${key}' requires a restart to update.`);
+                return;
+            }
+            this.setOption(key, newCfg.rawDocument[key]);
+        });
+        log.info("Updated config with new values");
+        console.log(this.rawDocument);
+    }
+
     public serverConfig(server: string): ConfigServer {
-        return this.servers.get(server);
+        return this.serverMap.get(server);
+    }
+
+    public get servers(): ConfigServer[] {
+        return [...this.serverMap.values()];
     }
 }
 
@@ -95,13 +127,17 @@ export class ConfigServer {
     }
 
     private validateDocument() {
-        if (this.doc["addresses"] === undefined || this.doc.addresses.length < 1) {
+        if (this.doc.addresses === undefined || this.doc.addresses.length < 1) {
             throw new Error(`${this.doc.name}.addresses is empty or not defined`);
         }
     }
 
+    public get name(): string {
+        return this.doc.name;
+    }
+
     public get addresses(): string[] {
-        return this.doc["addresses"];
+        return this.doc.addresses;
     }
 
     public get addressTuple(): {port: number, host: string}[] {
@@ -115,11 +151,11 @@ export class ConfigServer {
     }
 
     public get isIpv6(): boolean {
-        return this.doc["ipv6"] || false;
+        return this.doc.ipv6 || false;
     }
 
     public get maxConnections(): number {
-        return this.doc["max-connections"] || 0;
+        return Number.parseInt(this.doc["max-connections"]) || 0;
     }
 }
 

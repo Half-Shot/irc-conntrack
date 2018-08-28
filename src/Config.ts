@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 export class Config {
     private servers: Map<string,any>;
 

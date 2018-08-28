@@ -27,10 +27,10 @@ export class RestHandler {
 
     }
 
-    public start() {
+    public configure() {
         let app = express();        
         this.app = expressWs(app).app;
-        app.use(express.json());
+        this.app.use(express.json());
         this.app.use(this.logRequest.bind(this));
         this.app.use(this.checkToken.bind(this));   
         this.app.get("/_irc/connections/:server", this.getConnections.bind(this));
@@ -40,6 +40,12 @@ export class RestHandler {
         this.app.ws("/_irc/ws", this.openWebsocket.bind(this));
         this.app.get("/_irc/config", this.readConfig.bind(this));
         this.app.post("/_irc/config", this.updateConfig.bind(this));
+    }
+
+    public listen() {
+        if (this.app === undefined) {
+            throw Error("configure() should be called first");
+        }
         this.app.listen(this.config.bindPort, this.config.bindAddress, this.config.backlogLimit);
     }
 

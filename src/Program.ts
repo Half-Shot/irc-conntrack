@@ -23,7 +23,8 @@ function main() {
         config,
     );
     log.info("Starting rest handler");
-    rest.start();
+    rest.configure();
+    rest.listen();
 }
 
 main();

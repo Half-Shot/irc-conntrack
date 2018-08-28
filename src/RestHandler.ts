@@ -27,11 +27,11 @@ export class RestHandler {
     }
 
     public configure() {
-        let app = express();        
+        let app = express();
         this.app = expressWs(app).app;
         this.app.use(express.json());
         this.app.use(this.logRequest.bind(this));
-        this.app.use(this.checkToken.bind(this));   
+        this.app.use(this.checkToken.bind(this));
         this.app.get("/_irc/connections/:server", this.getConnections.bind(this));
         this.app.get("/_irc/connections/:server/:id", this.getConnection.bind(this));
         this.app.post("/_irc/connections/:server/open", this.openConnection.bind(this));
@@ -61,7 +61,7 @@ export class RestHandler {
 
     private openConnection(req: Request, res: Response) {
         console.log(req.body);
-        this.connTracker.openConnection(req.params["server"], 
+        this.connTracker.openConnection(req.params["server"],
             req.body as IrcConnectionOpts
         ).then((client_id: string) => {
             res.statusCode = 200;
@@ -81,13 +81,44 @@ export class RestHandler {
     private openWebsocket(ws: Ws, req: Request) {
         this.wsHandler.addConnection(`${req.hostname}:${req.connection.remotePort}`, ws);
     }
-    
+
     private readConfig(req: Request, res: Response) {
         res.send(this.config.rawDocument);
     }
-    
+
     private updateConfig(req: Request, res: Response) {
-        throw Error("Not implemented yet");
+        if (this.config.filename === undefined) {
+            res.statusCode = 500;
+            res.send({
+                errcode: ERRCODES.genericFail,
+                error: "Config has no filename",
+            } as IErrorResponse);
+            return;
+        }
+        let newConfig: Config;
+        try {
+            newConfig = Config.parseFile(this.config.filename);
+        } catch (e) {
+            log.error("Config file failed to parse", e);
+                res.statusCode = 500;
+            res.send({
+                errcode: ERRCODES.genericFail,
+                error: "Config failed to parse:" + e.message ,
+            } as IErrorResponse);
+            return;
+        }
+        try {
+            this.config.applyConfig(newConfig);
+            this.readConfig(req, res);
+        } catch (e) {
+            log.error("Config file could not be applied", e);
+                res.statusCode = 500;
+            res.send({
+                errcode: ERRCODES.genericFail,
+                error: "Config file could not be applied:" + e.message ,
+            } as IErrorResponse);
+            return;
+        }
     }
 
     private checkToken(req: Request, res: Response, next: NextFunction) {
@@ -117,7 +148,7 @@ export class RestHandler {
             res.send({
                 errcode: ERRCODES.badToken,
                 error: "Token was invalid",
-            } as IErrorResponse);        
+            } as IErrorResponse);
         }
     }
 
@@ -127,4 +158,3 @@ export class RestHandler {
         next();
     }
 }
- 

@@ -50,6 +50,10 @@ export class ConfigServer {
             };
         });
     }
+
+    public get isIpv6(): boolean {
+        return false;
+    }
 }
 
 

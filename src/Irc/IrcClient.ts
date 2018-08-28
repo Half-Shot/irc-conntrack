@@ -23,6 +23,7 @@ export class IrcClient extends Socket {
         const socketConnectOpts: TcpSocketConnectOpts = {
             port: address.port,
             host: address.host,
+            family: server.isIpv6 ? 6 : 4,
         };
         return new Promise((resolve, reject) => {
             this.log.verbose(`Connecting to ${address.host}:${address.port}`);

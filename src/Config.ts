@@ -81,6 +81,9 @@ export class Config {
         return new ConfigLogging();
     }
 
+    public get rawDocument(): any {
+        return this.doc;
+    }
     public serverConfig(server: string): ConfigServer {
         return this.servers.get(server);
     }

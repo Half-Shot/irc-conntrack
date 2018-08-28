@@ -45,6 +45,7 @@ export class RestHandler {
         if (this.app === undefined) {
             throw Error("configure() should be called first");
         }
+        log.info(`Listening on ${this.config.bindAddress}:${this.config.bindPort}`);
         this.app.listen(this.config.bindPort, this.config.bindAddress, this.config.backlogLimit);
     }
 
@@ -82,7 +83,7 @@ export class RestHandler {
     }
     
     private readConfig(req: Request, res: Response) {
-        throw Error("Not implemented yet");
+        res.send(this.config.rawDocument);
     }
     
     private updateConfig(req: Request, res: Response) {

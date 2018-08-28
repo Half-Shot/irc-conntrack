@@ -6,8 +6,8 @@
   "scripts": {
     "build": "tsc",
     "start": "node build/src/Program.js",
-    "test": "npm run build && mocha build/test/*.js",
-    "coverage": "npm run build && nyc mocha build/test/*.js"
+    "test": "npm run build && mocha build/test",
+    "coverage": "npm run build && nyc mocha build/test"
   },
   "repository": {
     "type": "git",
@@ -53,8 +53,9 @@
     "statements": 90,
     "functions": 90,
     "branches": 90,
+    "sourceMap": true,
     "include": [
-      "build/src/**/*.js"
+      "build/**/*.js"
     ],
     "exclude": [
       "build/test/**/*"

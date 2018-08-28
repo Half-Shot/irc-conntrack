@@ -11,4 +11,5 @@ export const ERRCODES = {
     timeout: "IC_TIMEOUT",
     genericFail: "IC_FAILURE",
     clientNotFound: "IC_CLIENT_NOT_FOUND",
+    connectionLimit: "IC_CONNECTION_LIMIT",
 };

@@ -14,7 +14,7 @@ export class ConnectionTracker {
     private ircClients: Map<string,IrcClient>;
 
     constructor(private config: Config, private wsHandler: WebsocketHandler) {
-        this.ircClients = new Map();    
+        this.ircClients = new Map();
         wsHandler.on("command", this.runCommand.bind(this));
     }
 
@@ -32,6 +32,12 @@ export class ConnectionTracker {
             log.warn(`Connection was requested for unknown server ${serverName}`);
             return Promise.reject(
                 {error: "Server is not in config", errcode: ERRCODES.notInConfig} as IErrorResponse
+            );
+        }
+        if (server.maxConnections === this.ircClients.size) {
+            log.warn(`At connection limit (${server.maxConnections}) for ${serverName}`);
+            return Promise.reject(
+                {error: "No more slots on this node", errcode: ERRCODES.connectionLimit} as IErrorResponse
             );
         }
         const uuid = Uuid();

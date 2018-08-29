@@ -6,6 +6,7 @@ import { ERRCODES, IErrorResponse} from "../Rest/ErrorResponse";
 import { IIrcSupported } from "./IrcSupported";
 import { IrcUtil } from "./IrcUtil";
 import { parseMessage, IMessage } from "./IMessage";
+import { MessageParser } from "./MessageParser";
 
 const DEFAULT_CONNECTION_TIMEOUT_MS = 10000;
 const LINE_DELIMITER = new RegExp('\r\n|\r|\n')
@@ -19,19 +20,32 @@ export interface IrcConnectionOpts {
 }
 
 export class IrcClient extends Socket {
-    private supported: IIrcSupported;
+    public supported: IIrcSupported;
+    private _motd: string = "";
     private log: Log;
     private dataBuffer: Buffer;
     private requestedDisconnect: Boolean = false;
+    private msgParser: MessageParser;
+    private nick: string;
 
-    constructor(private uuid: string, private ircOpts: IrcConnectionOpts, opts?: SocketConstructorOpts) {
+    constructor(readonly uuid: string, private ircOpts: IrcConnectionOpts, opts?: SocketConstructorOpts) {
         super(opts);
         this.ircOpts.stripColors = !(this.ircOpts.stripColors === false);
         this.log = new Log("Cli#"+this.uuid.substr(0,12));
         this.supported = {
             casemapping: "",
+            usermodes: "",
         };
         this.dataBuffer = Buffer.alloc(0);
+        this.msgParser = new MessageParser(this);
+    }
+
+    public get motd() {
+        return this._motd;
+    }
+
+    public get nickname() {
+        return this.nick;
     }
 
     public initiate(serverName: string, server: ConfigServer) : Promise<undefined> {
@@ -72,9 +86,24 @@ export class IrcClient extends Socket {
             this.log.verbose(`Begun connection.`);
         });
     }
-    
+
     public ircSetup() {
         this.write("CONNECT hello!\n");
+    }
+
+
+    public appendMotd(text: string, clear: boolean = false, finished: boolean = false) {
+        if (clear) {
+            this._motd = "";
+        }
+        this._motd += text;
+        if (finished) {
+            this.emit("motd", this._motd);
+        }
+    }
+
+    public setGivenNick(nick: string) {
+        this.nick = nick;
     }
 
     private onData(chunk: string|Buffer) {
@@ -101,7 +130,8 @@ export class IrcClient extends Socket {
             if (line.length) {
                 const message = parseMessage(line, this.ircOpts.stripColors);
                 try {
-                    this.onRawMessage(message);
+                    this.emit("raw", msg);
+                    this.msgParser.onMessage(message);
                 } catch (err) {
                     if (!this.requestedDisconnect) {
                         throw err;
@@ -110,9 +140,4 @@ export class IrcClient extends Socket {
             }
         });
     }
-
-    private onRawMessage(msg: IMessage) {
-        this.emit("raw", msg);
-    }
  }
- 

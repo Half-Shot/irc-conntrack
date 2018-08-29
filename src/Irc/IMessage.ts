@@ -10,7 +10,7 @@ export interface IMessage {
     commandType?: string,
     rawCommand?: string,
     server?: string,
-    args?: string[],
+    args: string[],
 }
 
 /**
@@ -23,7 +23,9 @@ export interface IMessage {
  * @return {Object} A parsed message object.
  */
 export function parseMessage(line: string, stripColors: boolean): IMessage {
-    const message: IMessage = {};
+    const message: IMessage = {
+        args: []
+    };
     let match;
 
     if (stripColors) {

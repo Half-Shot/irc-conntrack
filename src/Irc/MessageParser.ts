@@ -1,11 +1,13 @@
 import { IMessage } from "./IMessage";
 import { IrcClient } from "./IrcClient";
 import { Log } from "../Log";
+import { EventEmitter } from "events";
 
-export class MessageParser {
+export class MessageParser extends EventEmitter {
     private log: Log;
 
     constructor(private client: IrcClient) {
+        super();
         this.log = new Log("MsgParser#"+client.uuid);
     }
 
@@ -20,8 +22,8 @@ export class MessageParser {
         // include it in messages and will truncate what we send if
         // the string is too long. Therefore, we need to be considerate
         // neighbors and truncate our messages accordingly.
-        var welcomeStringWords = msg.args[1].split(/\s+/);
-        self.hostMask = welcomeStringWords[welcomeStringWords.length - 1];
+        const welcomeStringWords = msg.args[1].split(/\s+/);
+        const hostMask = welcomeStringWords[welcomeStringWords.length - 1];
         self._updateMaxLineLength();
         self.emit('registered', message);
         self.whois(self.nick, function(args) {
@@ -244,6 +246,269 @@ export class MessageParser {
         self.emit('nick', message.nick, message.args[0], channels, message);
     }
 
+    private onNames(msg: IMessage) {
+        self._casemap(message, 2);
+        channel = self.chanData(message.args[2]);
+        if (!message.args[3]) {
+            // No users
+            break;
+        }
+        var users = message.args[3].trim().split(/ +/);
+        if (channel) {
+            users.forEach(function(user) {
+                // user = "@foo", "+foo", "&@foo", etc...
+                // The symbols are the prefix set.
+                var allowedSymbols = Object.keys(self.modeForPrefix).join("");
+                // Split out the prefix from the nick e.g "@&foo" => ["@&foo", "@&", "foo"]
+                var prefixRegex = new RegExp("^([" + escapeRegExp(allowedSymbols) + "]*)(.*)$");
+                var match = user.match(prefixRegex);
+                if (match) {
+                    var userPrefixes = match[1];
+                    var knownPrefixes = '';
+                    for (var i = 0; i < userPrefixes.length; i++) {
+                        if (userPrefixes[i] in self.modeForPrefix) {
+                            knownPrefixes += userPrefixes[i];
+                        }
+                    }
+                    if (knownPrefixes.length > 0) {
+                        channel.users[match[2]] = knownPrefixes;
+                    }
+                    else {
+                        // recombine just in case this server allows weird chars in the nick.
+                        // We know it isn't a mode char.
+                        channel.users[match[1] + match[2]] = '';
+                    }
+                }
+            });
+        }
+    }
+
+    private onTopicReply(msg: IMessage) {
+        self._casemap(message, 1);
+        channel = self.chanData(message.args[1]);
+        if (channel) {
+            channel.topic = message.args[2];
+        }
+    }
+
+    private onEndOfNames(msg: IMessage) {
+        self._casemap(message, 1);
+        channel = self.chanData(message.args[1]);
+        if (channel) {
+            self.emit('names', message.args[1], channel.users);
+            self.emit('names' + message.args[1], channel.users);
+            self.send('MODE', message.args[1]);
+        }
+    }
+
+    private onTopicWhoTime(msg: IMessage) {
+        self._casemap(message, 1);
+        channel = self.chanData(message.args[1]);
+        if (channel) {
+            channel.topicBy = message.args[2];
+            // channel, topic, nick
+            self.emit('topic', message.args[1], channel.topic, channel.topicBy, message);
+        }
+    }
+
+    private onTopic(msg: IMessage) {
+        // channel, topic, nick
+        self._casemap(message, 0);
+        self.emit('topic', message.args[0], message.args[1], message.nick, message);
+
+        channel = self.chanData(message.args[0]);
+        if (channel) {
+            channel.topic = message.args[1];
+            channel.topicBy = message.nick;
+        }
+    }
+
+    private onChannelModeIs(msg: IMessage) {
+        self._casemap(message, 1);
+        channel = self.chanData(message.args[1]);
+        if (channel) {
+            channel.mode = message.args[2];
+        }
+
+        self.emit('mode_is', message.args[1], message.args[2]);
+    }
+
+    private onJoin(msg: IMessage) {
+        self._casemap(message, 0);
+        // channel, who
+        if (self.nick == message.nick) {
+            self.chanData(message.args[0], true);
+        }
+        else {
+            channel = self.chanData(message.args[0]);
+            if (channel && channel.users) {
+                channel.users[message.nick] = '';
+            }
+        }
+        self.emit('join', message.args[0], message.nick, message);
+        self.emit('join' + message.args[0], message.nick, message);
+        if (message.args[0] != message.args[0].toLowerCase()) {
+            self.emit('join' + message.args[0].toLowerCase(), message.nick, message);
+        }
+    }
+
+    private onPart(msg: IMessage) {
+        self._casemap(message, 0);
+        // channel, who, reason
+        self.emit('part', message.args[0], message.nick, message.args[1], message);
+        self.emit('part' + message.args[0], message.nick, message.args[1], message);
+        if (message.args[0] != message.args[0].toLowerCase()) {
+            self.emit('part' + message.args[0].toLowerCase(), message.nick, message.args[1], message);
+        }
+        if (self.nick == message.nick) {
+            channel = self.chanData(message.args[0]);
+            delete self.chans[channel.key];
+        }
+        else {
+            channel = self.chanData(message.args[0]);
+            if (channel && channel.users) {
+                delete channel.users[message.nick];
+            }
+        }
+    }
+
+    private onKick(msg: IMessage) {
+        self._casemap(message, 0);
+        // channel, who, by, reason
+        self.emit('kick', message.args[0], message.args[1], message.nick, message.args[2], message);
+        self.emit('kick' + message.args[0], message.args[1], message.nick, message.args[2], message);
+        if (message.args[0] != message.args[0].toLowerCase()) {
+            self.emit('kick' + message.args[0].toLowerCase(),
+                      message.args[1], message.nick, message.args[2], message);
+        }
+
+        if (self.nick == message.args[1]) {
+            channel = self.chanData(message.args[0]);
+            delete self.chans[channel.key];
+        }
+        else {
+            channel = self.chanData(message.args[0]);
+            if (channel && channel.users) {
+                delete channel.users[message.args[1]];
+            }
+        }
+    }
+
+    private onPrivMsg(msg: IMessage) {
+        self._casemap(message, 0);
+        from = message.nick;
+        to = message.args[0];
+        text = message.args[1] || '';
+        if (text[0] === '\u0001' && text.lastIndexOf('\u0001') > 0) {
+            self._handleCTCP(from, to, text, 'privmsg', message);
+            break;
+        }
+        self.emit('message', from, to, text, message);
+        if (self.supported.channel.types.indexOf(to.charAt(0)) !== -1) {
+            self.emit('message#', from, to, text, message);
+            self.emit('message' + to, from, text, message);
+            if (to != to.toLowerCase()) {
+                self.emit('message' + to.toLowerCase(), from, text, message);
+            }
+        }
+        if (to.toUpperCase() === self.nick.toUpperCase()) self.emit('pm', from, text, message);
+
+        if (self.opt.debug && to == self.nick)
+            util.log('GOT MESSAGE from ' + from + ': ' + text);
+    }
+
+    private onKill(msg: IMessage) {
+        nick = message.args[0];
+        channels = [];
+        Object.keys(self.chans).forEach(function(channame) {
+            var channel = self.chans[channame];
+            if (nick in channel.users) {
+                channels.push(channame);
+                delete channel.users[nick];
+            }
+        });
+        self.emit('kill', nick, message.args[1], channels, message);
+    }
+
+    private onKill(msg: IMessage) {
+        if (self.opt.debug)
+                   util.log('QUIT: ' + message.prefix + ' ' + message.args.join(' '));
+               if (self.nick == message.nick) {
+                   // TODO handle?
+                   break;
+               }
+               // handle other people quitting
+
+               channels = [];
+
+               // finding what channels a user is in?
+               Object.keys(self.chans).forEach(function(channame) {
+                   var channel = self.chans[channame];
+                   if (message.nick in channel.users) {
+                       delete channel.users[message.nick];
+                       channels.push(channame);
+                   }
+               });
+
+               // who, reason, channels
+               self.emit('quit', message.nick, message.args[0], channels, message);
+    }
+
+    private onInvite(msg: IMessage) {
+        self._casemap(message, 1);
+        from = message.nick;
+        to = message.args[0];
+        channel = message.args[1];
+        self.emit('invite', channel, from, message);
+    }
+
+    private onCap(msg: IMessage) {
+        if (message.args[0] === '*' &&
+        message.args[1] === 'ACK' &&
+        message.args[2] === 'sasl ') // there's a space after sasl
+       self.send('AUTHENTICATE', 'PLAIN');
+    }
+
+    private onAuthenticate(msg: IMessage) {
+        if (message.args[0] === '+') self.send('AUTHENTICATE',
+        new Buffer(
+            self.opt.nick + '\0' +
+            self.opt.userName + '\0' +
+            self.opt.password
+        ).toString('base64'));
+    }
+
+    private onErroneusNickname(msg: IMessage) {
+        if (self.opt.showErrors)
+            util.log('\033[01;31mERROR: ' + util.inspect(message) + '\033[0m');
+        // The Scunthorpe Problem
+        // ----------------------
+        // Some IRC servers have offensive word filters on nicks. Trying to change your
+        // nick to something with an offensive word in it will return this error.
+        //
+        // If we are already logged in, this is fine, we can just emit an error and
+        // let the client deal with it.
+        // If we are NOT logged in however, we need to propose a new nick else we
+        // will never be able to connect successfully and the connection will
+        // eventually time out, most likely resulting in infinite-reconnects.
+        //
+        // Check to see if we are NOT logged in, and if so, use a "random" string
+        // as the next nick.
+        if (self.hostMask !== '') { // hostMask set on rpl_welcome
+            self.emit('error', message);
+            break;
+        }
+        // rpl_welcome has not been sent
+        // We can't use a truly random string because we still need to abide by
+        // the BNF for nicks (first char must be A-Z, length limits, etc). We also
+        // want to be able to debug any issues if people say that they didn't get
+        // the nick they wanted.
+        var rndNick = "enick_" + Math.floor(Math.random() * 1000) // random 3 digits
+        self.send('NICK', rndNick);
+        self.nick = rndNick;
+        self._updateMaxLineLength();
+    }
+
     public onMessage (msg: IMessage) {
         switch (msg.command) {
            case 'rpl_welcome':
@@ -271,10 +536,10 @@ export class MessageParser {
                break;
            case 'PING':
                this.client.send('PONG', msg.args[0]);
-               this.client.emit('ping', msg.args[0]);
+               this.emit('ping', msg.args[0]);
                break;
            case 'PONG':
-               this.client.emit('pong', msg.args[0]);
+               this.emit('pong', msg.args[0]);
                break;
            case 'NOTICE':
                this.onNotice(msg);
@@ -295,131 +560,64 @@ export class MessageParser {
                this.client.appendMotd(msg.args[1] + '\n', false);
                break;
            case 'rpl_namreply':
-               self._casemap(message, 2);
-               channel = self.chanData(message.args[2]);
-               if (!message.args[3]) {
-                   // No users
-                   break;
-               }
-               var users = message.args[3].trim().split(/ +/);
-               if (channel) {
-                   users.forEach(function(user) {
-                       // user = "@foo", "+foo", "&@foo", etc...
-                       // The symbols are the prefix set.
-                       var allowedSymbols = Object.keys(self.modeForPrefix).join("");
-                       // Split out the prefix from the nick e.g "@&foo" => ["@&foo", "@&", "foo"]
-                       var prefixRegex = new RegExp("^([" + escapeRegExp(allowedSymbols) + "]*)(.*)$");
-                       var match = user.match(prefixRegex);
-                       if (match) {
-                           var userPrefixes = match[1];
-                           var knownPrefixes = '';
-                           for (var i = 0; i < userPrefixes.length; i++) {
-                               if (userPrefixes[i] in self.modeForPrefix) {
-                                   knownPrefixes += userPrefixes[i];
-                               }
-                           }
-                           if (knownPrefixes.length > 0) {
-                               channel.users[match[2]] = knownPrefixes;
-                           }
-                           else {
-                               // recombine just in case this server allows weird chars in the nick.
-                               // We know it isn't a mode char.
-                               channel.users[match[1] + match[2]] = '';
-                           }
-                       }
-                   });
-               }
+               this.onNames(msg);
                break;
            case 'rpl_endofnames':
-               self._casemap(message, 1);
-               channel = self.chanData(message.args[1]);
-               if (channel) {
-                   self.emit('names', message.args[1], channel.users);
-                   self.emit('names' + message.args[1], channel.users);
-                   self.send('MODE', message.args[1]);
-               }
+               this.onEndOfNames(msg);
                break;
            case 'rpl_topic':
-               self._casemap(message, 1);
-               channel = self.chanData(message.args[1]);
-               if (channel) {
-                   channel.topic = message.args[2];
-               }
+               this.onTopicReply(msg);
                break;
            case 'rpl_away':
-               self._addWhoisData(message.args[1], 'away', message.args[2], true);
+               this.client.setWhoisData(msg.args[1], 'away', msg.args[2], true);
                break;
            case 'rpl_whoisuser':
-               self._addWhoisData(message.args[1], 'user', message.args[2]);
-               self._addWhoisData(message.args[1], 'host', message.args[3]);
-               self._addWhoisData(message.args[1], 'realname', message.args[5]);
+               this.client.setWhoisData(msg.args[1], 'user', msg.args[2]);
+               this.client.setWhoisData(msg.args[1], 'host', msg.args[3]);
+               this.client.setWhoisData(msg.args[1], 'realname', msg.args[5]);
                break;
            case 'rpl_whoisidle':
-               self._addWhoisData(message.args[1], 'idle', message.args[2]);
+               this.client.setWhoisData(msg.args[1], 'idle', msg.args[2]);
                break;
            case 'rpl_whoischannels':
               // TODO - clean this up?
-               if (message.args.length >= 3)
-                   self._addWhoisData(message.args[1], 'channels', message.args[2].trim().split(/\s+/));
+               if (msg.args.length < 3) {
+                   return;
+               }
+               this.client.setWhoisData(msg.args[1], 'channels', msg.args[2].trim().split(/\s+/));
                break;
            case 'rpl_whoisserver':
-               self._addWhoisData(message.args[1], 'server', message.args[2]);
-               self._addWhoisData(message.args[1], 'serverinfo', message.args[3]);
+               this.client.setWhoisData(msg.args[1], 'server', msg.args[2]);
+               this.client.setWhoisData(msg.args[1], 'serverinfo', msg.args[3]);
                break;
            case 'rpl_whoisoperator':
-               self._addWhoisData(message.args[1], 'operator', message.args[2]);
+               this.client.setWhoisData(msg.args[1], 'operator', msg.args[2]);
                break;
            case '330': // rpl_whoisaccount?
-               self._addWhoisData(message.args[1], 'account', message.args[2]);
-               self._addWhoisData(message.args[1], 'accountinfo', message.args[3]);
+               this.client.setWhoisData(msg.args[1], 'account', msg.args[2]);
+               this.client.setWhoisData(msg.args[1], 'accountinfo', msg.args[3]);
                break;
            case 'rpl_endofwhois':
-               self.emit('whois', self._clearWhoisData(message.args[1]));
+               this.emit("whois", msg.args[1]);
                break;
            case 'rpl_liststart':
-               self.channellist = [];
-               self.emit('channellist_start');
+               this.emit('channellist_start');
                break;
            case 'rpl_list':
-               channel = {
-                   name: message.args[1],
-                   users: message.args[2],
-                   topic: message.args[3]
-               };
-               self.emit('channellist_item', channel);
-               self.channellist.push(channel);
+               this.client.addChannel(msg.args[1], msg.args[2], msg.args[3]);
+               this.emit('channellist_item', msg.args[1]);
                break;
            case 'rpl_listend':
-               self.emit('channellist', self.channellist);
+               this.emit('channellist');
                break;
            case 'rpl_topicwhotime':
-               self._casemap(message, 1);
-               channel = self.chanData(message.args[1]);
-               if (channel) {
-                   channel.topicBy = message.args[2];
-                   // channel, topic, nick
-                   self.emit('topic', message.args[1], channel.topic, channel.topicBy, message);
-               }
+               this.onTopicWhoTime(msg);
                break;
            case 'TOPIC':
-               // channel, topic, nick
-               self._casemap(message, 0);
-               self.emit('topic', message.args[0], message.args[1], message.nick, message);
-
-               channel = self.chanData(message.args[0]);
-               if (channel) {
-                   channel.topic = message.args[1];
-                   channel.topicBy = message.nick;
-               }
+               this.onTopic(msg);
                break;
            case 'rpl_channelmodeis':
-               self._casemap(message, 1);
-               channel = self.chanData(message.args[1]);
-               if (channel) {
-                   channel.mode = message.args[2];
-               }
-
-               self.emit('mode_is', message.args[1], message.args[2]);
+               this.onChannelModeIs(msg);
                break;
            case 'rpl_creationtime':
                self._casemap(message, 1);
@@ -429,142 +627,32 @@ export class MessageParser {
                }
                break;
            case 'JOIN':
-               self._casemap(message, 0);
-               // channel, who
-               if (self.nick == message.nick) {
-                   self.chanData(message.args[0], true);
-               }
-               else {
-                   channel = self.chanData(message.args[0]);
-                   if (channel && channel.users) {
-                       channel.users[message.nick] = '';
-                   }
-               }
-               self.emit('join', message.args[0], message.nick, message);
-               self.emit('join' + message.args[0], message.nick, message);
-               if (message.args[0] != message.args[0].toLowerCase()) {
-                   self.emit('join' + message.args[0].toLowerCase(), message.nick, message);
-               }
+               this.onJoin(msg);
                break;
            case 'PART':
-               self._casemap(message, 0);
-               // channel, who, reason
-               self.emit('part', message.args[0], message.nick, message.args[1], message);
-               self.emit('part' + message.args[0], message.nick, message.args[1], message);
-               if (message.args[0] != message.args[0].toLowerCase()) {
-                   self.emit('part' + message.args[0].toLowerCase(), message.nick, message.args[1], message);
-               }
-               if (self.nick == message.nick) {
-                   channel = self.chanData(message.args[0]);
-                   delete self.chans[channel.key];
-               }
-               else {
-                   channel = self.chanData(message.args[0]);
-                   if (channel && channel.users) {
-                       delete channel.users[message.nick];
-                   }
-               }
+               this.onPart(msg);
                break;
            case 'KICK':
-               self._casemap(message, 0);
-               // channel, who, by, reason
-               self.emit('kick', message.args[0], message.args[1], message.nick, message.args[2], message);
-               self.emit('kick' + message.args[0], message.args[1], message.nick, message.args[2], message);
-               if (message.args[0] != message.args[0].toLowerCase()) {
-                   self.emit('kick' + message.args[0].toLowerCase(),
-                             message.args[1], message.nick, message.args[2], message);
-               }
-
-               if (self.nick == message.args[1]) {
-                   channel = self.chanData(message.args[0]);
-                   delete self.chans[channel.key];
-               }
-               else {
-                   channel = self.chanData(message.args[0]);
-                   if (channel && channel.users) {
-                       delete channel.users[message.args[1]];
-                   }
-               }
+               this.onKick(msg);
                break;
            case 'KILL':
-               nick = message.args[0];
-               channels = [];
-               Object.keys(self.chans).forEach(function(channame) {
-                   var channel = self.chans[channame];
-                   if (nick in channel.users) {
-                       channels.push(channame);
-                       delete channel.users[nick];
-                   }
-               });
-               self.emit('kill', nick, message.args[1], channels, message);
+               this.onKill(msg);
                break;
            case 'PRIVMSG':
-               self._casemap(message, 0);
-               from = message.nick;
-               to = message.args[0];
-               text = message.args[1] || '';
-               if (text[0] === '\u0001' && text.lastIndexOf('\u0001') > 0) {
-                   self._handleCTCP(from, to, text, 'privmsg', message);
-                   break;
-               }
-               self.emit('message', from, to, text, message);
-               if (self.supported.channel.types.indexOf(to.charAt(0)) !== -1) {
-                   self.emit('message#', from, to, text, message);
-                   self.emit('message' + to, from, text, message);
-                   if (to != to.toLowerCase()) {
-                       self.emit('message' + to.toLowerCase(), from, text, message);
-                   }
-               }
-               if (to.toUpperCase() === self.nick.toUpperCase()) self.emit('pm', from, text, message);
-
-               if (self.opt.debug && to == self.nick)
-                   util.log('GOT MESSAGE from ' + from + ': ' + text);
+               this.onPrivMsg(msg);
                break;
            case 'INVITE':
-               self._casemap(message, 1);
-               from = message.nick;
-               to = message.args[0];
-               channel = message.args[1];
-               self.emit('invite', channel, from, message);
+               this.onInvite(msg);
                break;
            case 'QUIT':
-               if (self.opt.debug)
-                   util.log('QUIT: ' + message.prefix + ' ' + message.args.join(' '));
-               if (self.nick == message.nick) {
-                   // TODO handle?
-                   break;
-               }
-               // handle other people quitting
-
-               channels = [];
-
-               // finding what channels a user is in?
-               Object.keys(self.chans).forEach(function(channame) {
-                   var channel = self.chans[channame];
-                   if (message.nick in channel.users) {
-                       delete channel.users[message.nick];
-                       channels.push(channame);
-                   }
-               });
-
-               // who, reason, channels
-               self.emit('quit', message.nick, message.args[0], channels, message);
+               this.onQuit(msg);
                break;
-
            // for sasl
            case 'CAP':
-               if (message.args[0] === '*' &&
-                    message.args[1] === 'ACK' &&
-                    message.args[2] === 'sasl ') // there's a space after sasl
-                   self.send('AUTHENTICATE', 'PLAIN');
+               this.onCap(msg);
                break;
            case 'AUTHENTICATE':
-               if (message.args[0] === '+') self.send('AUTHENTICATE',
-                   new Buffer(
-                       self.opt.nick + '\0' +
-                       self.opt.userName + '\0' +
-                       self.opt.password
-                   ).toString('base64'));
+               this.onAuthenticate(msg);
                break;
            case '903':
                self.send('CAP', 'END');
@@ -575,49 +663,17 @@ export class MessageParser {
            // no one can claim it. The error handling though is identical to offensive word
            // nicks hence the fall through here.
            case 'err_erroneusnickname':
-               if (self.opt.showErrors)
-                   util.log('\033[01;31mERROR: ' + util.inspect(message) + '\033[0m');
-
-               // The Scunthorpe Problem
-               // ----------------------
-               // Some IRC servers have offensive word filters on nicks. Trying to change your
-               // nick to something with an offensive word in it will return this error.
-               //
-               // If we are already logged in, this is fine, we can just emit an error and
-               // let the client deal with it.
-               // If we are NOT logged in however, we need to propose a new nick else we
-               // will never be able to connect successfully and the connection will
-               // eventually time out, most likely resulting in infinite-reconnects.
-               //
-               // Check to see if we are NOT logged in, and if so, use a "random" string
-               // as the next nick.
-               if (self.hostMask !== '') { // hostMask set on rpl_welcome
-                   self.emit('error', message);
-                   break;
-               }
-               // rpl_welcome has not been sent
-               // We can't use a truly random string because we still need to abide by
-               // the BNF for nicks (first char must be A-Z, length limits, etc). We also
-               // want to be able to debug any issues if people say that they didn't get
-               // the nick they wanted.
-               var rndNick = "enick_" + Math.floor(Math.random() * 1000) // random 3 digits
-               self.send('NICK', rndNick);
-               self.nick = rndNick;
-               self._updateMaxLineLength();
+               this.onErroneusNickname(msg);
                break;
 
            default:
-               if (message.commandType == 'error') {
-                   self.emit('error', message);
-                   if (self.opt.showErrors)
-                       util.log('\u001b[01;31mERROR: ' + util.inspect(message) + '\u001b[0m');
+               if (msg.commandType == 'error') {
+                   this.emit('error', msg);
+                   this.log.warn(`Error on ${msg.command} ${msg.rawCommand}`);
+                   return;
                }
-               else {
-                   if (self.opt.debug)
-                       util.log('\u001b[01;31mUnhandled message: ' + util.inspect(message) + '\u001b[0m');
-                   break;
-               }
+               this.log.verbose(`Unhandled ${msg.command} ${msg.rawCommand}`);
+               break;
        }
-        });
     }
 }

@@ -26,7 +26,8 @@ export class IrcClient extends Socket {
     private dataBuffer: Buffer;
     private requestedDisconnect: Boolean = false;
     private msgParser: MessageParser;
-    private nick: string;
+    private nick?: string;
+    private whoisData: Map<string,any> = new Map();
 
     constructor(readonly uuid: string, private ircOpts: IrcConnectionOpts, opts?: SocketConstructorOpts) {
         super(opts);
@@ -38,6 +39,7 @@ export class IrcClient extends Socket {
         };
         this.dataBuffer = Buffer.alloc(0);
         this.msgParser = new MessageParser(this);
+        //TODO: Message parser emits lots of things.
     }
 
     public get motd() {
@@ -91,6 +93,7 @@ export class IrcClient extends Socket {
         this.write("CONNECT hello!\n");
     }
 
+    /*- State Setting Functions: To be moved to a state interface */
 
     public appendMotd(text: string, clear: boolean = false, finished: boolean = false) {
         if (clear) {
@@ -104,6 +107,44 @@ export class IrcClient extends Socket {
 
     public setGivenNick(nick: string) {
         this.nick = nick;
+    }
+
+    public setWhoisData(nick: string, key: string, value: string|string[], ifExists: boolean=false) {
+        if (ifExists && !this.whoisData.has(nick)) {
+            return;
+        }
+        const whois = this.whoisData.get(nick) || {nick};
+        whois[key] = value;
+    }
+
+    public addChannel(name: string, users: string, topic: string) {
+
+    }
+
+    /* Command functions for IRC */
+
+    public send(...args: string[]) {
+        if (!this.requestedDisconnect) {
+            return;
+        }
+
+        // Note that the command arg is included in the args array as the first element
+        if (args[args.length - 1].match(/\s/) || args[args.length - 1].match(/^:/) || args[args.length - 1] === '') {
+            args[args.length - 1] = ':' + args[args.length - 1];
+        }
+        const msg = args.join(' ');
+        this.log.silly(`TX:"${msg}"`);
+        this.write(msg + "\r\n");
+    }
+
+    public whois(nick?: string): Promise<any> {
+        if (nick === undefined) {
+            nick = this.nick;
+            if (nick === undefined) {
+                return Promise.reject("Own nick not known yet");
+            }
+        }
+        this.send("whois", nick);
     }
 
     private onData(chunk: string|Buffer) {
@@ -122,6 +163,7 @@ export class IrcClient extends Socket {
             // if buffer is not ended with \r\n, there's more chunks.
             return;
         } else {
+            this.log.silly(`RX:"${this.dataBuffer.toString("utf-8")}"`);
             // else, initialize the buffer.
             this.dataBuffer = Buffer.alloc(0);
         }
@@ -130,7 +172,7 @@ export class IrcClient extends Socket {
             if (line.length) {
                 const message = parseMessage(line, this.ircOpts.stripColors);
                 try {
-                    this.emit("raw", msg);
+                    this.emit("raw", message);
                     this.msgParser.onMessage(message);
                 } catch (err) {
                     if (!this.requestedDisconnect) {

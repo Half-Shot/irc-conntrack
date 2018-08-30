@@ -12,18 +12,33 @@ const log = new Log("ConnTrack");
 
 export class ConnectionTracker {
     private ircClients: Map<string,IrcClient>;
+    private serverClients: Map<string, Set<string>>;
 
     constructor(private config: Config, private wsHandler: WebsocketHandler) {
         this.ircClients = new Map();
+        this.serverClients = new Map();
         wsHandler.on("command", this.runCommand.bind(this));
     }
 
-    public getConnectionsForServer(server: string, detail: string): IConnectionState[] | String[] {
-        log.verbose(`Fetching connections for ${server}`);
-        if (detail === "ids") {
-            return [...this.ircClients.keys()];
+    public getConnectionsForServer(serverName: string, detail: string): IConnectionState[] | String[] {
+        log.verbose(`Fetching connections for ${serverName}`);
+        if (!this.serverClients.has(serverName)) {
+            return [];
         }
-        return [] as IConnectionState[];
+        const clients = [...this.ircClients.values()].filter((client) => {
+            return (this.serverClients.get(serverName) as Set<string>).has(client.uuid);
+        });
+        if (detail === "ids") {
+            return clients.map((client) => client.uuid);
+        } else if (detail === "state") {
+            return clients.map((client) => { return {
+                id: client.uuid,
+                nick: client.nickname,
+                channels: client.channels,
+                mode: client.usermode
+            } as IConnectionState });
+        }
+        throw new Error("Unknown value for 'detail' flag");
     }
 
     public openConnection(serverName: string, opts: IrcConnectionOpts): Promise<string> {
@@ -44,6 +59,12 @@ export class ConnectionTracker {
         const client = new IrcClient(uuid, opts);
         return client.initiate(serverName, server).then(() => {
             this.ircClients.set(uuid, client);
+            let clientServerSet = this.serverClients.get(serverName);
+            if (clientServerSet === undefined) {
+                clientServerSet = new Set();
+                this.serverClients.set(serverName, clientServerSet);
+            }
+            clientServerSet.add(uuid);
             client.on("raw", (msg) => {
                 this.wsHandler.onIrcMessage("raw", uuid, msg);
             });

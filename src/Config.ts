@@ -155,7 +155,7 @@ export class ConfigServer {
     }
 
     public get maxConnections(): number {
-        return Number.parseInt(this.doc["max-connections"]) || 0;
+        return Number.parseInt(this.doc["max-connections"]) || 50;
     }
 }
 

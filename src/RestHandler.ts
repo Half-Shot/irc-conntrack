@@ -51,7 +51,7 @@ export class RestHandler {
 
     private getConnections(req: Request, res: Response) {
         const detail = req.query["detail"] || "ids";
-        let conns = this.connTracker.getConnectionsForServer(req.query["server"], detail);
+        let conns = this.connTracker.getConnectionsForServer(req.params["server"], detail);
         res.send({connections: conns} as IConnectionsResponse);
     }
 
@@ -63,10 +63,10 @@ export class RestHandler {
         console.log(req.body);
         this.connTracker.openConnection(req.params["server"],
             req.body as IrcConnectionOpts
-        ).then((client_id: string) => {
+        ).then((id: string) => {
             res.statusCode = 200;
             res.send({
-                client_id,
+                id,
             } as IOpenResponse)
         }).catch((err: any) => {
             res.statusCode = 500;
@@ -154,7 +154,8 @@ export class RestHandler {
 
     private logRequest(req: Request, res: Response, next: NextFunction) {
         const body = req.body === undefined ? "" : req.body;
-        logHttp.verbose(`${req.hostname}:${req.connection.remotePort} ${req.method} ${req.path} ${body}`);
+        logHttp.verbose(`${req.hostname}:${req.connection.remotePort} ${req.method} `+
+                        `${req.path} ${JSON.stringify(req.query)} ${req.method === "GET" ? body : ""}`);
         next();
     }
 }

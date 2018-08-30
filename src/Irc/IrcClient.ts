@@ -6,7 +6,7 @@ import { ERRCODES, IErrorResponse} from "../Rest/ErrorResponse";
 import { IIrcSupported } from "./IrcSupported";
 import { IrcUtil } from "./IrcUtil";
 import { parseMessage, IMessage } from "./IMessage";
-import { MessageParser } from "./MessageParser";
+//import { MessageParser } from "./MessageParser";
 
 const DEFAULT_CONNECTION_TIMEOUT_MS = 10000;
 const LINE_DELIMITER = new RegExp('\r\n|\r|\n')
@@ -25,9 +25,11 @@ export class IrcClient extends Socket {
     private log: Log;
     private dataBuffer: Buffer;
     private requestedDisconnect: Boolean = false;
-    private msgParser: MessageParser;
+    //private msgParser: MessageParser;
     private nick?: string;
     private whoisData: Map<string,any> = new Map();
+    private _channels: string[] = [];
+    private mode: string = "";
 
     constructor(readonly uuid: string, private ircOpts: IrcConnectionOpts, opts?: SocketConstructorOpts) {
         super(opts);
@@ -38,7 +40,7 @@ export class IrcClient extends Socket {
             usermodes: "",
         };
         this.dataBuffer = Buffer.alloc(0);
-        this.msgParser = new MessageParser(this);
+        //this.msgParser = new MessageParser(this);
         //TODO: Message parser emits lots of things.
     }
 
@@ -48,6 +50,14 @@ export class IrcClient extends Socket {
 
     public get nickname() {
         return this.nick;
+    }
+
+    public get channels() {
+        return this._channels;
+    }
+
+    public get usermode() {
+        return this.mode;
     }
 
     public initiate(serverName: string, server: ConfigServer) : Promise<undefined> {
@@ -137,7 +147,7 @@ export class IrcClient extends Socket {
         this.write(msg + "\r\n");
     }
 
-    public whois(nick?: string): Promise<any> {
+    public whois(nick?: string): Promise<any>|undefined {
         if (nick === undefined) {
             nick = this.nick;
             if (nick === undefined) {
@@ -173,7 +183,7 @@ export class IrcClient extends Socket {
                 const message = parseMessage(line, this.ircOpts.stripColors);
                 try {
                     this.emit("raw", message);
-                    this.msgParser.onMessage(message);
+                    //this.msgParser.onMessage(message);
                 } catch (err) {
                     if (!this.requestedDisconnect) {
                         throw err;

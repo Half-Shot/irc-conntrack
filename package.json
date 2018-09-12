@@ -8,7 +8,7 @@
     "lint": "tslint --project tsconfig.json --format stylish",
     "start": "node build/src/Program.js",
     "test": "npm run build && mocha --recursive build/test",
-    "coverage": "nyc mocha --compilers ts-node/register --require source-map-support/register --full-trace --bail test/**/*.ts test/*.ts"
+    "coverage": "nyc mocha --require ts-node/register --require source-map-support/register --full-trace --bail test/**/*.ts test/*.ts"
   },
   "repository": {
     "type": "git",

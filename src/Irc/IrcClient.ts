@@ -33,7 +33,6 @@ export class IrcClient extends Socket {
 
     constructor(readonly uuid: string, private ircOpts: IrcConnectionOpts, opts?: SocketConstructorOpts) {
         super(opts);
-        this.ircOpts.stripColors = !(this.ircOpts.stripColors === false);
         this.log = new Log("Cli#"+this.uuid.substr(0,12));
         this.supported = getDefaultSupported();
         this.dataBuffer = Buffer.alloc(0);

@@ -9,6 +9,7 @@ import { parseMessage, IMessage } from "./IMessage";
 //import { MessageParser } from "./MessageParser";
 
 const DEFAULT_CONNECTION_TIMEOUT_MS = 10000;
+const BUFFER_SIZE = 1024;
 const LINE_DELIMITER = new RegExp('\r\n|\r|\n')
 
 
@@ -25,6 +26,7 @@ export class IrcClient extends Socket {
     private _motd: string = "";
     private log: Log;
     private dataBuffer: Buffer;
+    private dataBufferLength: number;
     private requestedDisconnect: Boolean = false;
     //private msgParser: MessageParser;
     private nick?: string;
@@ -36,7 +38,8 @@ export class IrcClient extends Socket {
         super(opts);
         this.log = new Log("Cli#"+this.uuid.substr(0,12));
         this.supported = getDefaultSupported();
-        this.dataBuffer = Buffer.alloc(0);
+        this.dataBuffer = Buffer.alloc(BUFFER_SIZE);
+        this.dataBufferLength = 0;
         //this.msgParser = new MessageParser(this);
         //TODO: Message parser emits lots of things.
     }
@@ -155,24 +158,29 @@ export class IrcClient extends Socket {
     }
 
     private onData(chunk: string|Buffer) {
+        let finished;
         if (typeof (chunk) === 'string') {
             this.dataBuffer.write(chunk);
+            finished = chunk.endsWith("\r\n");
         } else {
-            this.dataBuffer = Buffer.concat([this.dataBuffer, chunk]);
+            chunk.copy(this.dataBuffer, this.dataBufferLength);
+            finished = chunk.slice(chunk.length -2, 2).equals(new Uint8Array([13,10]));
         }
-
+        this.dataBufferLength += chunk.length;
+        if (this.dataBufferLength > BUFFER_SIZE) {
+            this.dataBuffer.fill(0,0);
+            this.emit("error", "Buffer size limit reached for IRC message");
+            return;
+        }
+        if (!finished) {
+            return;
+        }
         const lines = IrcUtil.convertEncoding(
-            this.dataBuffer,
+            this.dataBuffer.slice(0, this.dataBufferLength),
             this.ircOpts.detectEncoding,
         ).toString().split(LINE_DELIMITER);
-
-        if (lines.pop()) {
-            // if buffer is not ended with \r\n, there's more chunks.
-            return;
-        } else {
-            // else, initialize the buffer.
-            this.dataBuffer = Buffer.alloc(0);
-        }
+        // Clear the buffer
+        this.dataBuffer.fill(0,0);
         this.log.silly(`RX:"${lines.join()}"`);
         lines.forEach((line) => {
             if (line.length) {

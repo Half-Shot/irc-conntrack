@@ -7,22 +7,22 @@ describe("IrcUtil", () => {
         const supported = getDefaultSupported();
         supported.casemapping = "ascii";
         it("should not map case if message contains no arguments", () => {
-            const msg = {args: []};
+            const msg = {badFormat: false, args: []};
             IrcUtil.casemap(msg, 1, supported);
             expect(msg.args).to.be.empty;
         });
         it("should not map case if message doesn't contain index", () => {
-            const msg = {args: ["#aPPle"]};
+            const msg = {badFormat: false, args: ["#aPPle"]};
             IrcUtil.casemap(msg, 1, supported);
             expect(msg.args[0]).to.equal("#aPPle");
         });
         it("should not map case if arg doesn't begin with a #", () => {
-            const msg = {args: ["aPPle"]};
+            const msg = {badFormat: false, args: ["aPPle"]};
             IrcUtil.casemap(msg, 1, supported);
             expect(msg.args[0]).to.equal("aPPle");
         });
         it("should map case", () => {
-            const msg = {args: ["#aPPLE"]};
+            const msg = {badFormat: false, args: ["#aPPLE"]};
             IrcUtil.casemap(msg, 0, supported);
             expect(msg.args[0]).to.equal("#apple");
         });

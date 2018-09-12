@@ -129,7 +129,7 @@ export class IrcClient extends Socket {
 
     /* Command functions for IRC */
 
-    public send(...args: string[]) {
+    public send(...args: string[]): Promise<void> {
         if (this.requestedDisconnect) {
             return Promise.resolve();
         }
@@ -140,7 +140,9 @@ export class IrcClient extends Socket {
         }
         const msg = args.join(' ');
         this.log.silly(`TX:"${msg}"`);
-        this.write(msg + "\r\n");
+        return new Promise((resolve) => {
+            this.write(msg + "\r\n", "utf-8", () => {resolve()});
+        });
     }
 
     public whois(nick?: string): Promise<any>|undefined {

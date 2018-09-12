@@ -76,15 +76,17 @@ export class IrcClient extends Socket {
                 this.destroy(e);
                 reject(e);
             }, this.ircOpts.connectionTimeout || DEFAULT_CONNECTION_TIMEOUT_MS);
-            this.once("error", (err) => {
+            const errorHandler = (err: Error) => {
                 clearTimeout(timeout);
                 this.log.warn(`Error connecting:`, err);
                 this.destroy();
                 reject(err);
-            });
+            };
+            this.once("error", errorHandler);
             this.connect(socketConnectOpts, () => {
                 clearTimeout(timeout);
-                this.log.info(`Connected.`);
+                this.log.info(`Connected`);
+                this.removeListener("error", errorHandler);
                 if (!this.ircOpts.detectEncoding) {
                     this.setEncoding("utf-8");
                 }
@@ -93,7 +95,7 @@ export class IrcClient extends Socket {
                     resolve();
                 });
             });
-            this.log.verbose(`Begun connection.`);
+            this.log.verbose(`Connecting..`);
         });
     }
 
@@ -184,9 +186,12 @@ export class IrcClient extends Socket {
         this.log.silly(`RX:"${lines.join()}"`);
         lines.forEach((line) => {
             if (line.length) {
-                const message = parseMessage(line, this.ircOpts.stripColors);
                 try {
+                    const message = parseMessage(line, this.ircOpts.stripColors);
                     this.emit("raw", message);
+                    if (message.badFormat) {
+                        throw new Error("Bad format");
+                    }
                     //this.msgParser.onMessage(message);
                 } catch (err) {
                     if (!this.ircOpts.ignoreBadMessages && !this.requestedDisconnect) {

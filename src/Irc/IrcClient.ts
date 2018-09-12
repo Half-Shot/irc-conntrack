@@ -17,6 +17,7 @@ export interface IrcConnectionOpts {
     connectionTimeout: number,
     detectEncoding: boolean,
     stripColors: boolean,
+    ignoreBadMessages: boolean,
 }
 
 export class IrcClient extends Socket {
@@ -180,7 +181,7 @@ export class IrcClient extends Socket {
                     this.emit("raw", message);
                     //this.msgParser.onMessage(message);
                 } catch (err) {
-                    if (!this.requestedDisconnect) {
+                    if (!this.ircOpts.ignoreBadMessages && !this.requestedDisconnect) {
                         throw err;
                     }
                 }

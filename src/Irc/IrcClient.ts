@@ -67,19 +67,16 @@ export class IrcClient extends Socket {
         return new Promise((resolve, reject) => {
             this.log.verbose(`Connecting to ${address.host}:${address.port}`);
             const timeout = setTimeout(() => {
-                this.log.warn(`imed out waiting for connection to ${address.host}:${address.port}`);
-                this.destroy(new Error("Timeout waiting for connection"));
-                reject(
-                    {error: "Timed out connecting", errcode: ERRCODES.timeout} as IErrorResponse
-                );
+                this.log.warn(`Timed out waiting for connection to ${address.host}:${address.port}`);
+                const e = new Error("Timeout waiting for connection");
+                this.destroy(e);
+                reject(e);
             }, this.ircOpts.connectionTimeout || DEFAULT_CONNECTION_TIMEOUT_MS);
             this.once("error", (err) => {
+                clearTimeout(timeout);
                 this.log.warn(`Error connecting:`, err);
                 this.destroy();
-                reject(
-                    {error: err.message, errcode: ERRCODES.genericFail} as IErrorResponse
-                );
-                clearTimeout(timeout);
+                reject(err);
             });
             this.connect(socketConnectOpts, () => {
                 clearTimeout(timeout);

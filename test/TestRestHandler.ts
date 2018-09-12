@@ -24,7 +24,7 @@ const expressMock = (() => {
     }
 }) as any;
 
-expressMock.json = () => {}
+expressMock.json = () => {};
 
 Mock('express', expressMock);
 
@@ -35,8 +35,7 @@ Mock('express-ws', (app) => {
 });
 
 import { RestHandler } from "../src/RestHandler";
-import { fail } from "assert";
-import { ERRCODES, IErrorResponse } from "../src/Rest/ErrorResponse";
+import { ERRCODES } from "../src/Rest/ErrorResponse";
 
 describe("RestHandler", () => {
    beforeEach(() => {

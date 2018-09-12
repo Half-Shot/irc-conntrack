@@ -1,5 +1,8 @@
 const ircColors = require("irc-colors");
 import {Codes} from "./IrcCodes";
+import { Log } from "../Log";
+
+const log = new Log("IMessage");
 
 export interface IMessage {
     prefix?: string,
@@ -9,8 +12,10 @@ export interface IMessage {
     command?: string,
     commandType?: string,
     rawCommand?: string,
+    rawLine?: string,
     server?: string,
     args: string[],
+    badFormat: boolean,
 }
 
 /**
@@ -24,7 +29,9 @@ export interface IMessage {
  */
 export function parseMessage(line: string, stripColors: boolean): IMessage {
     const message: IMessage = {
-        args: []
+        args: [],
+        rawLine: line,
+        badFormat: false,
     };
     let match;
 
@@ -51,7 +58,9 @@ export function parseMessage(line: string, stripColors: boolean): IMessage {
     // Parse command
     match = line.match(/^([^ ]+) */);
     if (match === null) {
-        throw new Error("Message was not in an understood format");
+        message.badFormat = true;
+        log.error("Message was not in an understood format");
+        return message;
     }
     message.command = match[1];
     message.rawCommand = match[1];
@@ -70,7 +79,9 @@ export function parseMessage(line: string, stripColors: boolean): IMessage {
     if (line.search(/^:|\s+:/) != -1) {
         match = line.match(/(.*?)(?:^:|\s+:)(.*)/);
         if (match === null) {
-            throw new Error("Message was not in an understood format");
+            message.badFormat = true;
+            log.error("Message was not in an understood format");
+            return message;
         }
         middle = match[1].trimRight();
         trailing = match[2];

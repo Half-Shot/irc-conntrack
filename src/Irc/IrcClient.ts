@@ -130,8 +130,8 @@ export class IrcClient extends Socket {
     /* Command functions for IRC */
 
     public send(...args: string[]) {
-        if (!this.requestedDisconnect) {
-            return;
+        if (this.requestedDisconnect) {
+            return Promise.resolve();
         }
 
         // Note that the command arg is included in the args array as the first element

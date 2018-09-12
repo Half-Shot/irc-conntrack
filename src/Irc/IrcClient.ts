@@ -56,8 +56,8 @@ export class IrcClient extends Socket {
         return this.mode;
     }
 
-    public initiate(serverName: string, server: ConfigServer) : Promise<undefined> {
-        this.log.info(`Creating new connection for ${serverName}`);
+    public initiate(server: ConfigServer) : Promise<undefined> {
+        this.log.info(`Creating new connection for ${server.name}`);
         const address = server.addressTuple[0];
         const socketConnectOpts: TcpSocketConnectOpts = {
             port: address.port,
@@ -88,15 +88,16 @@ export class IrcClient extends Socket {
                     this.setEncoding("utf-8");
                 }
                 this.on("data", this.onData.bind(this));
-                this.ircSetup();
-                resolve();
+                this.ircSetup().then(() => {
+                    resolve();
+                });
             });
             this.log.verbose(`Begun connection.`);
         });
     }
 
-    public ircSetup() {
-        this.write("CONNECT hello!\n");
+    public ircSetup(): Promise<void> {
+        return this.send("CONNECT hello!\n");
     }
 
     /*- State Setting Functions: To be moved to a state interface */

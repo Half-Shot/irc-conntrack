@@ -57,7 +57,7 @@ export class ConnectionTracker {
         }
         const uuid = Uuid();
         const client = new IrcClient(uuid, opts);
-        return client.initiate(serverName, server).then(() => {
+        return client.initiate(server).then(() => {
             this.ircClients.set(uuid, client);
             let clientServerSet = this.serverClients.get(serverName);
             if (clientServerSet === undefined) {

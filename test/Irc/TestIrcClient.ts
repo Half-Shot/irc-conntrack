@@ -12,13 +12,13 @@ import { IMessage } from "../../src/Irc/IMessage";
 const MOCK_SERVER: ConfigServer = new ConfigServer({
     name: "mockserver",
     addresses: ["localhost:5544"],
-    ipv6: false
+    ipv6: false,
 });
 
 let listener = new MockIrcd();
 let client: IrcClient|null;
 
-function createClient() : IrcClient {
+function createClient(): IrcClient {
     return new IrcClient("some-uuid", {
         nicknames: "myname",
         stripColors: false,
@@ -41,7 +41,7 @@ describe("IrcClient", () => {
         }
         await listener.spinDown();
         listener = new MockIrcd();
-    })
+    });
 
     describe("constructor", () => {
         it("should construct", () => {
@@ -60,15 +60,15 @@ describe("IrcClient", () => {
             await listener.waitForData(1, 500);
             expect(listener.connections).to.equal(1);
             expect(listener.dataRecieved).to.equal(":CONNECT hello!\n\r\n");
-        }); 
+        });
     });
     describe("onData", () => {
         beforeEach(() => {
             return listener.spinUp();
-        })
+        });
         it("should handle simple PONG messages", () => {
             const c = client = createClient();
-            let msgPromise = new Promise((resolve, reject) => {
+            const msgPromise = new Promise((resolve, reject) => {
                 c.on("raw", resolve);
             });
             client.initiate(MOCK_SERVER).then(() => {
@@ -77,10 +77,10 @@ describe("IrcClient", () => {
             return msgPromise.then((msg) => {
                 expect(msg).to.not.be.undefined;
             });
-        }); 
+        });
         it("should handle a PING splt into chunks", () => {
             const c = client = createClient();
-            let msgPromise = new Promise((resolve, reject) => {
+            const msgPromise = new Promise((resolve, reject) => {
                 c.on("raw", resolve);
             });
             client.initiate(MOCK_SERVER).then(() => {
@@ -94,7 +94,7 @@ describe("IrcClient", () => {
         });
         it("should error on exceeding buffer", () => {
             const c = client = createClient();
-            let msgPromise: Promise<Error> = new Promise((resolve, reject) => {
+            const msgPromise: Promise<Error> = new Promise((resolve, reject) => {
                 c.on("raw", () => { reject(new Error("Expected an error")); });
                 c.on("error", resolve);
             });
@@ -109,7 +109,7 @@ describe("IrcClient", () => {
         });
         it("should return a badFormat message", () => {
             const c = client = createClient();
-            let msgPromise: Promise<IMessage> = new Promise((resolve, reject) => {
+            const msgPromise: Promise<IMessage> = new Promise((resolve, reject) => {
                 c.on("raw", resolve);
                 c.on("error", reject);
             });
@@ -119,6 +119,6 @@ describe("IrcClient", () => {
             return msgPromise.then((msg: IMessage) => {
                 expect(msg.badFormat).to.be.true;
             });
-        }); 
+        });
     });
 });

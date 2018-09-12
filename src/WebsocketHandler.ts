@@ -8,16 +8,16 @@ import { IMessage } from "./Irc/IMessage";
 const log = new Log("WebsocketHandler");
 
 export interface IWsCommand {
-    client_id: string,
-    id: string,
-    type: string, // ["raw","join"]
-    content: any,
+    client_id: string;
+    id: string;
+    type: string; // ["raw","join"]
+    content: any;
 }
 
 export class WebsocketHandler extends EventEmitter {
-    private connections: Map<string,Ws>;
+    private connections: Map<string, Ws>;
 
-    constructor (private config : Config) {
+    constructor(private config: Config) {
         super();
         this.connections = new Map();
     }
@@ -35,7 +35,6 @@ export class WebsocketHandler extends EventEmitter {
         }
 
         this.emit("connected", host, connection);
-
 
         // Bind handlers
         connection.onopen = this.onOpen.bind(this);
@@ -58,7 +57,7 @@ export class WebsocketHandler extends EventEmitter {
     public onIrcMessage(event: string, client_id: string, msg: IMessage) {
         this.connections.forEach((cn) => {
             cn.send({event, client_id, msg});
-        })
+        });
     }
 
     private onOpen(e: {target: Ws}) {
@@ -68,12 +67,12 @@ export class WebsocketHandler extends EventEmitter {
     private onMessage(e: {data: Ws.Data, type: string, target: Ws}) {
         log.verbose(`onMessage type=${e.type} data=${e.data}`);
         try {
-             let cmd = JSON.parse(e.data as string) as IWsCommand;
+             const cmd = JSON.parse(e.data as string) as IWsCommand;
              log.info(`Got command type=${cmd.type} id=${cmd.id} client=${cmd.client_id} content=${cmd.content}`);
              this.emit("command", cmd, e.target);
         } catch (e) {
             // Command not understood. Not saying anything.
-            log.warn("Failed to execute command:",e);
+            log.warn("Failed to execute command:", e);
         }
     }
 

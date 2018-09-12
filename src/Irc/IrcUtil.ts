@@ -2,11 +2,11 @@ import { IIrcSupported } from "./IrcSupported";
 import { IMessage } from "./IMessage";
 
 //Reference: http://www.irc.org/tech_docs/005.html
-const KNOWN_CASE_MAPPINGS = ['ascii', 'rfc1459', 'strict-rfc1459'];
+const KNOWN_CASE_MAPPINGS = ["ascii", "rfc1459", "strict-rfc1459"];
 
 export class IrcUtil {
     public static convertEncoding(buffer: Buffer, encoding: Boolean): Buffer {
-        let out = buffer;
+        const out = buffer;
         // TODO: Fix this
         // try {
         //     var charsetDetector = require('node-icu-charset-detector');
@@ -26,7 +26,7 @@ export class IrcUtil {
 
     // Checks the arg at the given index for a channel. If one exists, casemap it
     // according to ISUPPORT rules.
-    public static casemap (msg: IMessage, index: number, supported: IIrcSupported): void {
+    public static casemap(msg: IMessage, index: number, supported: IIrcSupported): void {
         if (!msg.args || !msg.args[index] || msg.args[index][0] !== "#") {
             return;
         }
@@ -37,20 +37,19 @@ export class IrcUtil {
         if (KNOWN_CASE_MAPPINGS.indexOf(supported.casemapping) === -1) {
             return str;
         }
-        var lower = str.toLowerCase();
-        if (supported.casemapping === 'rfc1459') {
+        let lower = str.toLowerCase();
+        if (supported.casemapping === "rfc1459") {
             lower = lower.
-            replace(/\[/g, '{').
-            replace(/\]/g, '}').
-            replace(/\\/g, '|').
-            replace(/\^/g, '~');
-        }
-        else if (supported.casemapping === 'strict-rfc1459') {
+            replace(/\[/g, "{").
+            replace(/\]/g, "}").
+            replace(/\\/g, "|").
+            replace(/\^/g, "~");
+        } else if (supported.casemapping === "strict-rfc1459") {
             lower = lower.
-            replace(/\[/g, '{').
-            replace(/\]/g, '}').
-            replace(/\\/g, '|');
+            replace(/\[/g, "{").
+            replace(/\]/g, "}").
+            replace(/\\/g, "|");
         }
         return lower;
-    }
+    };
 }

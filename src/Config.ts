@@ -1,18 +1,18 @@
 /* istanbul ignore file */
-import * as Yaml from 'js-yaml';
-import * as fs from 'fs';
+import * as Yaml from "js-yaml";
+import * as fs from "fs";
 import { Log } from "./Log";
 
-let log:Log;
+let log: Log;
 
 const PROTECTED_FIELDS = [
         "bind-address",
         "bind-port",
-        "backlog-limit"
+        "backlog-limit",
 ];
 
 export class Config {
-    private serverMap: Map<string,any>;
+    private serverMap: Map<string, any>;
 
     private constructor(private doc: any, readonly filename?: string) {
         if (!log) {
@@ -32,7 +32,7 @@ export class Config {
             log = new Log("Config");
         }
 
-        const contents = fs.readFileSync(filename, 'utf-8');
+        const contents = fs.readFileSync(filename, "utf-8");
         log.info(`Read from ${filename}`);
         return Config.parseYaml(contents, filename);
     }
@@ -46,7 +46,7 @@ export class Config {
     }
 
     private validateDocument() {
-        if (this.doc["servers"] === undefined || this.doc.servers.length < 1) {
+        if (this.doc.servers === undefined || this.doc.servers.length < 1) {
             throw new Error("'servers' is empty or not defined.");
         }
         if (!this.doc["access-token"]) {
@@ -88,7 +88,7 @@ export class Config {
     }
 
     public applyConfig(newCfg: Config) {
-        let droppedServers = new Set([...this.serverMap.keys()]);
+        const droppedServers = new Set([...this.serverMap.keys()]);
         newCfg.servers.forEach((server: ConfigServer) => {
             this.serverMap.set(server.name, server);
             droppedServers.delete(server.name);
@@ -140,9 +140,9 @@ export class ConfigServer {
         return this.doc.addresses;
     }
 
-    public get addressTuple(): {port: number, host: string}[] {
+    public get addressTuple(): Array<{port: number, host: string}> {
         return this.addresses.map((addr) => {
-            let split = addr.split(":",2);
+            const split = addr.split(":", 2);
             return {
                 host: split[0],
                 port: Number.parseInt(split[1]),
@@ -158,7 +158,6 @@ export class ConfigServer {
         return Number.parseInt(this.doc["max-connections"]) || 50;
     }
 }
-
 
 export class ConfigLogging {
     public get lineDateFormat(): string {

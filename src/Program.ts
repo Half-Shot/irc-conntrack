@@ -8,7 +8,7 @@ import * as Command from "commander";
 const log = new Log("main");
 
 function main() {
-    Command.option("-c --config", "Config file", undefined, "./config.yaml")
+    Command.option("-c --config", "Config file", undefined, "./config.yaml");
     Command.option("-o --config-option <options>", "Config option", undefined, [])
     .parse(process.argv);
 
@@ -23,7 +23,7 @@ function main() {
 
     log.info("Read config");
     if (Command.configOption) {
-        let opts = Array.isArray(Command.configOption) ? Command.configOption : [Command.configOption];
+        const opts = Array.isArray(Command.configOption) ? Command.configOption : [Command.configOption];
         (opts).forEach((value: string) => {
 
             const split = value.split("=", 2);

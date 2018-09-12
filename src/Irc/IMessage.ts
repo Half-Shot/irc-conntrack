@@ -5,17 +5,17 @@ import { Log } from "../Log";
 const log = new Log("IMessage");
 
 export interface IMessage {
-    prefix?: string,
-    nick?: string,
-    user?: string,
-    host?: string,
-    command?: string,
-    commandType?: string,
-    rawCommand?: string,
-    rawLine?: string,
-    server?: string,
-    args: string[],
-    badFormat: boolean,
+    prefix?: string;
+    nick?: string;
+    user?: string;
+    host?: string;
+    command?: string;
+    commandType?: string;
+    rawCommand?: string;
+    rawLine?: string;
+    server?: string;
+    args: string[];
+    badFormat: boolean;
 }
 
 /**
@@ -43,14 +43,13 @@ export function parseMessage(line: string, stripColors: boolean): IMessage {
     match = line.match(/^:([^ ]+) +/);
     if (match) {
         message.prefix = match[1];
-        line = line.replace(/^:[^ ]+ +/, '');
+        line = line.replace(/^:[^ ]+ +/, "");
         match = message.prefix.match(/^([_a-zA-Z0-9\[\]\\`^{}|-]*)(!([^@]+)@(.*))?$/);
         if (match) {
             message.nick = match[1];
             message.user = match[3];
             message.host = match[4];
-        }
-        else {
+        } else {
             message.server = message.prefix;
         }
     }
@@ -64,8 +63,8 @@ export function parseMessage(line: string, stripColors: boolean): IMessage {
     }
     message.command = match[1];
     message.rawCommand = match[1];
-    message.commandType = 'normal';
-    line = line.replace(/^[^ ]+ +/, '');
+    message.commandType = "normal";
+    line = line.replace(/^[^ ]+ +/, "");
 
     if (Codes[message.rawCommand]) {
         message.command     = Codes[message.rawCommand].name;
@@ -73,7 +72,7 @@ export function parseMessage(line: string, stripColors: boolean): IMessage {
     }
 
     message.args = [];
-    var middle, trailing;
+    let middle, trailing;
 
     // Parse parameters
     if (line.search(/^:|\s+:/) != -1) {
@@ -85,16 +84,17 @@ export function parseMessage(line: string, stripColors: boolean): IMessage {
         }
         middle = match[1].trimRight();
         trailing = match[2];
-    }
-    else {
+    } else {
         middle = line;
     }
 
-    if (middle.length)
+    if (middle.length) {
         message.args = middle.split(/ +/);
+    }
 
-    if (typeof (trailing) != 'undefined' && trailing.length)
+    if (typeof (trailing) != "undefined" && trailing.length) {
         message.args.push(trailing);
+    }
 
     return message;
 }

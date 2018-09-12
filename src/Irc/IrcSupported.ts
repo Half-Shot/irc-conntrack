@@ -1,11 +1,11 @@
 export interface IIrcSupported {
-    casemapping: string,
-    usermodes: string,
+    casemapping: string;
+    usermodes: string;
 }
 
-export function getDefaultSupported () : IIrcSupported {
+export function getDefaultSupported(): IIrcSupported {
     return {
         casemapping: "",
-        usermodes: ""
-    }
-};
+        usermodes: "",
+    };
+}

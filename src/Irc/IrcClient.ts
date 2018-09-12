@@ -10,15 +10,14 @@ import { parseMessage, IMessage } from "./IMessage";
 
 const DEFAULT_CONNECTION_TIMEOUT_MS = 10000;
 const BUFFER_SIZE = 1024;
-const LINE_DELIMITER = new RegExp('\r\n|\r|\n')
-
+const LINE_DELIMITER = new RegExp("\r\n|\r|\n");
 
 export interface IrcConnectionOpts {
-    nicknames: string | string[],
-    connectionTimeout: number,
-    detectEncoding: boolean,
-    stripColors: boolean,
-    ignoreBadMessages: boolean,
+    nicknames: string | string[];
+    connectionTimeout: number;
+    detectEncoding: boolean;
+    stripColors: boolean;
+    ignoreBadMessages: boolean;
 }
 
 export class IrcClient extends Socket {
@@ -30,13 +29,13 @@ export class IrcClient extends Socket {
     private requestedDisconnect: Boolean = false;
     //private msgParser: MessageParser;
     private nick?: string;
-    private whoisData: Map<string,any> = new Map();
+    private whoisData: Map<string, any> = new Map();
     private _channels: string[] = [];
     private mode: string = "";
 
     constructor(readonly uuid: string, private ircOpts: IrcConnectionOpts, opts?: SocketConstructorOpts) {
         super(opts);
-        this.log = new Log("Cli#"+this.uuid.substr(0,12));
+        this.log = new Log("Cli#" + this.uuid.substr(0, 12));
         this.supported = getDefaultSupported();
         this.dataBuffer = Buffer.alloc(BUFFER_SIZE);
         this.dataBufferLength = 0;
@@ -60,7 +59,7 @@ export class IrcClient extends Socket {
         return this.mode;
     }
 
-    public initiate(server: ConfigServer) : Promise<undefined> {
+    public initiate(server: ConfigServer): Promise<undefined> {
         this.log.info(`Creating new connection for ${server.name}`);
         const address = server.addressTuple[0];
         const socketConnectOpts: TcpSocketConnectOpts = {
@@ -119,7 +118,7 @@ export class IrcClient extends Socket {
         this.nick = nick;
     }
 
-    public setWhoisData(nick: string, key: string, value: string|string[], ifExists: boolean=false) {
+    public setWhoisData(nick: string, key: string, value: string|string[], ifExists: boolean= false) {
         if (ifExists && !this.whoisData.has(nick)) {
             return;
         }
@@ -139,13 +138,13 @@ export class IrcClient extends Socket {
         }
 
         // Note that the command arg is included in the args array as the first element
-        if (args[args.length - 1].match(/\s/) || args[args.length - 1].match(/^:/) || args[args.length - 1] === '') {
-            args[args.length - 1] = ':' + args[args.length - 1];
+        if (args[args.length - 1].match(/\s/) || args[args.length - 1].match(/^:/) || args[args.length - 1] === "") {
+            args[args.length - 1] = ":" + args[args.length - 1];
         }
-        const msg = args.join(' ');
+        const msg = args.join(" ");
         this.log.silly(`TX:"${msg}"`);
         return new Promise((resolve) => {
-            this.write(msg + "\r\n", "utf-8", () => {resolve()});
+            this.write(msg + "\r\n", "utf-8", () => {resolve(); });
         });
     }
 
@@ -161,16 +160,16 @@ export class IrcClient extends Socket {
 
     private onData(chunk: string|Buffer) {
         let finished;
-        if (typeof (chunk) === 'string') {
+        if (typeof (chunk) === "string") {
             this.dataBuffer.write(chunk);
             finished = chunk.endsWith("\r\n");
         } else {
             chunk.copy(this.dataBuffer, this.dataBufferLength);
-            finished = chunk.slice(chunk.length -2, 2).equals(new Uint8Array([13,10]));
+            finished = chunk.slice(chunk.length - 2, 2).equals(new Uint8Array([13, 10]));
         }
         this.dataBufferLength += chunk.length;
         if (this.dataBufferLength > BUFFER_SIZE) {
-            this.dataBuffer.fill(0,0);
+            this.dataBuffer.fill(0, 0);
             this.emit("error", "Buffer size limit reached for IRC message");
             return;
         }
@@ -182,7 +181,7 @@ export class IrcClient extends Socket {
             this.ircOpts.detectEncoding,
         ).toString().split(LINE_DELIMITER);
         // Clear the buffer
-        this.dataBuffer.fill(0,0);
+        this.dataBuffer.fill(0, 0);
         this.log.silly(`RX:"${lines.join()}"`);
         lines.forEach((line) => {
             if (line.length) {

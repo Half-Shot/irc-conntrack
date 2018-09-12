@@ -1,6 +1,6 @@
-import { createLogger, Logger, format, transports } from "winston";     
+import { createLogger, Logger, format, transports } from "winston";
 import { ConfigLogging } from "./Config";
-import { inspect } from "util"; 
+import { inspect } from "util";
 import * as moment from "moment";
 import "winston-daily-rotate-file";
 
@@ -42,7 +42,7 @@ export class Log {
         /*const tsports: transports.StreamTransportInstance[] = Log.config.files.map((file) =>
             Log.setupFileTransport(file),
         );*/
-        let tsports = [];
+        const tsports = [];
         tsports.push(new transports.Console({
             level: Log.config.console,
         }));

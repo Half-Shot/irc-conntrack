@@ -11,7 +11,7 @@ import * as Ws from "ws";
 const log = new Log("ConnTrack");
 
 export class ConnectionTracker {
-    private ircClients: Map<string,IrcClient>;
+    private ircClients: Map<string, IrcClient>;
     private serverClients: Map<string, Set<string>>;
 
     constructor(private config: Config, private wsHandler: WebsocketHandler) {
@@ -35,8 +35,8 @@ export class ConnectionTracker {
                 id: client.uuid,
                 nick: client.nickname,
                 channels: client.channels,
-                mode: client.usermode
-            } as IConnectionState });
+                mode: client.usermode,
+            } as IConnectionState; });
         }
         throw new Error("Unknown value for 'detail' flag");
     }
@@ -46,13 +46,13 @@ export class ConnectionTracker {
         if (server === undefined) {
             log.warn(`Connection was requested for unknown server ${serverName}`);
             return Promise.reject(
-                {error: "Server is not in config", errcode: ERRCODES.notInConfig} as IErrorResponse
+                {error: "Server is not in config", errcode: ERRCODES.notInConfig} as IErrorResponse,
             );
         }
         if (server.maxConnections === this.ircClients.size) {
             log.warn(`At connection limit (${server.maxConnections}) for ${serverName}`);
             return Promise.reject(
-                {error: "No more slots on this node", errcode: ERRCODES.connectionLimit} as IErrorResponse
+                {error: "No more slots on this node", errcode: ERRCODES.connectionLimit} as IErrorResponse,
             );
         }
         const uuid = Uuid();
@@ -72,11 +72,11 @@ export class ConnectionTracker {
         });
     }
 
-    public runCommand(cmd : IWsCommand, ws: Ws) {
-        log.info(`runCommand - ${cmd.client_id.substr(0,12)} - ${cmd.id.substr(0,12)}`);
+    public runCommand(cmd: IWsCommand, ws: Ws) {
+        log.info(`runCommand - ${cmd.client_id.substr(0, 12)} - ${cmd.id.substr(0, 12)}`);
         const client = this.ircClients.get(cmd.client_id);
         if (!client) {
-            ws.send(JSON.stringify({id: cmd.id, errcode: ERRCODES.clientNotFound})); 
+            ws.send(JSON.stringify({id: cmd.id, errcode: ERRCODES.clientNotFound}));
             return;
         }
         if (cmd.type === "raw") {

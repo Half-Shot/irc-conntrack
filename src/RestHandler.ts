@@ -21,13 +21,13 @@ export class RestHandler {
     constructor(
         private connTracker: ConnectionTracker,
         private wsHandler: WebsocketHandler,
-        private config: Config
+        private config: Config,
     ) {
 
     }
 
     public configure() {
-        let app = express();
+        const app = express();
         this.app = expressWs(app).app;
         this.app.use(express.json());
         this.app.use(this.logRequest.bind(this));
@@ -50,8 +50,8 @@ export class RestHandler {
     }
 
     private getConnections(req: Request, res: Response) {
-        const detail = req.query["detail"] || "ids";
-        let conns = this.connTracker.getConnectionsForServer(req.params["server"], detail);
+        const detail = req.query.detail || "ids";
+        const conns = this.connTracker.getConnectionsForServer(req.params.server, detail);
         res.send({connections: conns} as IConnectionsResponse);
     }
 
@@ -61,13 +61,13 @@ export class RestHandler {
 
     private openConnection(req: Request, res: Response) {
         console.log(req.body);
-        this.connTracker.openConnection(req.params["server"],
-            req.body as IrcConnectionOpts
+        this.connTracker.openConnection(req.params.server,
+            req.body as IrcConnectionOpts,
         ).then((id: string) => {
             res.statusCode = 200;
             res.send({
                 id,
-            } as IOpenResponse)
+            } as IOpenResponse);
         }).catch((err: any) => {
             res.statusCode = 500;
             res.send(err);
@@ -100,7 +100,7 @@ export class RestHandler {
             newConfig = Config.parseFile(this.config.filename);
         } catch (e) {
             log.error("Config file failed to parse", e);
-                res.statusCode = 500;
+            res.statusCode = 500;
             res.send({
                 errcode: ERRCODES.genericFail,
                 error: "Config failed to parse:" + e.message ,
@@ -112,7 +112,7 @@ export class RestHandler {
             this.readConfig(req, res);
         } catch (e) {
             log.error("Config file could not be applied", e);
-                res.statusCode = 500;
+            res.statusCode = 500;
             res.send({
                 errcode: ERRCODES.genericFail,
                 error: "Config file could not be applied:" + e.message ,
@@ -127,7 +127,7 @@ export class RestHandler {
         if (authHeader !== undefined) {
             token = authHeader.substr("Bearer ".length);
         } else {
-            token = req.query["access_token"];
+            token = req.query.access_token;
         }
 
         if (token === undefined) {
@@ -154,7 +154,7 @@ export class RestHandler {
 
     private logRequest(req: Request, res: Response, next: NextFunction) {
         const body = req.body === undefined ? "" : req.body;
-        logHttp.verbose(`${req.hostname}:${req.connection.remotePort} ${req.method} `+
+        logHttp.verbose(`${req.hostname}:${req.connection.remotePort} ${req.method} ` +
                         `${req.path} ${JSON.stringify(req.query)} ${req.method === "GET" ? body : ""}`);
         next();
     }

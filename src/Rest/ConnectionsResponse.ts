@@ -3,8 +3,8 @@ export interface IConnectionsResponse {
 }
 
 export interface IConnectionState {
-    id: string,
-    nick: string,
-    channels: string[],
-    mode: string,
+    id: string;
+    nick: string;
+    channels: string[];
+    mode: string;
 }

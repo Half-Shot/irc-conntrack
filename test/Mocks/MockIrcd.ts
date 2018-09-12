@@ -11,8 +11,8 @@ export class MockIrcd {
     private dataPromiseTrigger: any;
     private dataExpecting: number;
 
-    constructor() { 
-        this.listener = new Server((conn) => {this.onConnection(conn)});
+    constructor() {
+        this.listener = new Server((conn) => {this.onConnection(conn);});
         this.dataRecieved = "";
         this.dataExpecting = -1;
         this.connections = 0;
@@ -70,7 +70,7 @@ export class MockIrcd {
     }
 
     private onConnection(conn: Socket) {
-        conn.on("data", (data) => {this.onData(data)});
+        conn.on("data", (data) => {this.onData(data);});
         conn.on("close", () => {
             this.sockets.splice(this.sockets.findIndex((c) => c === conn), 0);
         });

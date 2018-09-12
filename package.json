@@ -6,8 +6,8 @@
   "scripts": {
     "build": "tsc",
     "start": "node build/src/Program.js",
-    "test": "npm run build && mocha build/test",
-    "coverage": "npm run build && nyc mocha build/test"
+    "test": "npm run build && mocha --recursive build/test",
+    "coverage": "npm run build && nyc mocha --recursive build/test"
   },
   "repository": {
     "type": "git",

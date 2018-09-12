@@ -169,11 +169,10 @@ export class IrcClient extends Socket {
             // if buffer is not ended with \r\n, there's more chunks.
             return;
         } else {
-            this.log.silly(`RX:"${this.dataBuffer.toString("utf-8")}"`);
             // else, initialize the buffer.
             this.dataBuffer = Buffer.alloc(0);
         }
-
+        this.log.silly(`RX:"${lines.join()}"`);
         lines.forEach((line) => {
             if (line.length) {
                 const message = parseMessage(line, this.ircOpts.stripColors);

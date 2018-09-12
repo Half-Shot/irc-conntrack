@@ -1,7 +1,7 @@
 import { IIrcSupported } from "./IrcSupported";
 import { IMessage } from "./IMessage";
 
-// http://www.irc.org/tech_docs/005.html
+//Reference: http://www.irc.org/tech_docs/005.html
 const KNOWN_CASE_MAPPINGS = ['ascii', 'rfc1459', 'strict-rfc1459'];
 
 export class IrcUtil {

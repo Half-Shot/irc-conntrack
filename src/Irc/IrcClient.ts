@@ -3,7 +3,7 @@ import { ConfigServer } from "../Config";
 import { Log } from "../Log";
 import { TcpSocketConnectOpts } from "net";
 import { ERRCODES, IErrorResponse} from "../Rest/ErrorResponse";
-import { IIrcSupported } from "./IrcSupported";
+import { IIrcSupported, getDefaultSupported } from "./IrcSupported";
 import { IrcUtil } from "./IrcUtil";
 import { parseMessage, IMessage } from "./IMessage";
 //import { MessageParser } from "./MessageParser";
@@ -35,10 +35,7 @@ export class IrcClient extends Socket {
         super(opts);
         this.ircOpts.stripColors = !(this.ircOpts.stripColors === false);
         this.log = new Log("Cli#"+this.uuid.substr(0,12));
-        this.supported = {
-            casemapping: "",
-            usermodes: "",
-        };
+        this.supported = getDefaultSupported();
         this.dataBuffer = Buffer.alloc(0);
         //this.msgParser = new MessageParser(this);
         //TODO: Message parser emits lots of things.

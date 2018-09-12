@@ -145,14 +145,14 @@ export class IrcClient extends Socket {
         });
     }
 
-    public whois(nick?: string): Promise<any>|undefined {
+    public whois(nick?: string): Promise<any> {
         if (nick === undefined) {
             nick = this.nick;
             if (nick === undefined) {
                 return Promise.reject("Own nick not known yet");
             }
         }
-        this.send("whois", nick);
+        return this.send("whois", nick);
     }
 
     private onData(chunk: string|Buffer) {

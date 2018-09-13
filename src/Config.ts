@@ -68,6 +68,15 @@ export class Config {
 
         return new Config(Yaml.load(yamlString), filename);
     }
+
+    public static fromDoc(doc: object, filename?: string): Config {
+        if (!log) {
+            log = new Log("Config");
+        }
+
+        return new Config(doc, filename);
+    }
+
     private serverMap: Map<string, any>;
 
     private constructor(private doc: any, readonly filename?: string) {

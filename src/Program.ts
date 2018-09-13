@@ -8,7 +8,7 @@ import * as Command from "commander";
 const log = new Log("main");
 
 function main() {
-    Command.option("-c --config", "Config file", undefined, "./config.yaml");
+    Command.option("-c --config <file>", "Config file", undefined, "./config.yaml");
     Command.option("-o --config-option <options>", "Config option", undefined, [])
     .parse(process.argv);
 

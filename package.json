@@ -64,6 +64,9 @@
     "include": [
       "src"
     ],
+    "exclude": [
+      "src/Program.ts"
+    ],
     "reporter": [
       "lcov",
       "text-summary"

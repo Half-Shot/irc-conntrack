@@ -88,10 +88,10 @@ export class RestHandler {
 
     private updateConfig(req: Request, res: Response) {
         if (this.config.filename === undefined) {
-            res.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+            res.statusCode = HttpStatus.LOCKED;
             res.send({
                 errcode: ERRCODES.genericFail,
-                error: "Config has no filename",
+                error: "Service was not started with a config file, so cannot load.",
             } as IErrorResponse);
             return;
         }

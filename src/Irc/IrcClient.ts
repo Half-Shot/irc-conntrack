@@ -2,7 +2,7 @@ import { Socket, SocketConnectOpts, SocketConstructorOpts } from "net";
 import { ConfigServer } from "../Config";
 import { Log } from "../Log";
 import { TcpSocketConnectOpts } from "net";
-import { ERRCODES, IErrorResponse} from "../Rest/ErrorResponse";
+import { ERRCODES, IErrorResponse} from "../Rest/IErrorResponse";
 import { IIrcSupported, getDefaultSupported } from "./IrcSupported";
 import { IrcUtil } from "./IrcUtil";
 import { parseMessage, IMessage } from "./IMessage";

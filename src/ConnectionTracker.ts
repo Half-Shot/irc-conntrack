@@ -78,13 +78,17 @@ export class ConnectionTracker {
         const UUID_SHORT_LENGTH = 12;
         const ID_SHORT_LENGTH = 12;
         log.info(`runCommand ${cmd.client_id.substr(0, UUID_SHORT_LENGTH)} ${cmd.id.substr(0, ID_SHORT_LENGTH)}`);
+        if (!["raw"].includes(cmd.type)) {
+            ws.send(JSON.stringify({id: cmd.id, errcode: ERRCODES.commandNotRecognised}));
+            return;
+        }
         const client = this.ircClients.get(cmd.client_id);
         if (!client) {
             ws.send(JSON.stringify({id: cmd.id, errcode: ERRCODES.clientNotFound}));
             return;
         }
         if (cmd.type === "raw") {
-            client.write(cmd.content as string);
+            client.send(cmd.content as string);
         }
     }
 }

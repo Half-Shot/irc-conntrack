@@ -12,4 +12,5 @@ export const ERRCODES = {
     genericFail: "IC_FAILURE",
     clientNotFound: "IC_CLIENT_NOT_FOUND",
     connectionLimit: "IC_CONNECTION_LIMIT",
+    commandNotRecognised: "IC_COMMAND_NOT_RECOGNISED",
 };

@@ -81,15 +81,21 @@ describe("IrcClient", () => {
             });
         });
         it("should handle a PING splt into chunks", () => {
+            const MSG_DELAY = 250;
             const c = client = createClient();
             const msgPromise = new Promise((resolve, reject) => {
                 c.on("raw", resolve);
             });
             client.initiate(MOCK_SERVER).then(() => {
-                listener.send(":irc.halfy.net PONG ");
-                listener.send("irc.halfy.net :LAG153");
+                return listener.send(":irc.halfy.net PONG ");
+            }).then(() => {
+                return new Promise((resolve) => setTimeout(resolve, MSG_DELAY));
+            }).then(() => {
+                return listener.send("irc.halfy.net :LAG153");
+            }).then(() => {
                 listener.send("6718080540\r\n");
             });
+
             return msgPromise.then((msg) => {
                 return expect(msg).to.not.be.undefined;
             });

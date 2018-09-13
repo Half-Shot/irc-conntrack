@@ -6,7 +6,7 @@ import { ERRCODES, IErrorResponse} from "../Rest/ErrorResponse";
 import { IIrcSupported, getDefaultSupported } from "./IrcSupported";
 import { IrcUtil } from "./IrcUtil";
 import { parseMessage, IMessage } from "./IMessage";
-//import { MessageParser } from "./MessageParser";
+// import { MessageParser } from "./MessageParser";
 
 const DEFAULT_CONNECTION_TIMEOUT_MS = 10000;
 const BUFFER_SIZE = 1024;
@@ -27,7 +27,7 @@ export class IrcClient extends Socket {
     private dataBuffer: Buffer;
     private dataBufferLength: number;
     private requestedDisconnect: Boolean = false;
-    //private msgParser: MessageParser;
+    // private msgParser: MessageParser;
     private nick?: string;
     private whoisData: Map<string, any> = new Map();
     private _channels: string[] = [];
@@ -39,8 +39,8 @@ export class IrcClient extends Socket {
         this.supported = getDefaultSupported();
         this.dataBuffer = Buffer.alloc(BUFFER_SIZE);
         this.dataBufferLength = 0;
-        //this.msgParser = new MessageParser(this);
-        //TODO: Message parser emits lots of things.
+        // this.msgParser = new MessageParser(this);
+        // TODO: Message parser emits lots of things.
     }
 
     public get motd() {
@@ -191,7 +191,7 @@ export class IrcClient extends Socket {
                     if (message.badFormat) {
                         throw new Error("Bad format");
                     }
-                    //this.msgParser.onMessage(message);
+                    // this.msgParser.onMessage(message);
                 } catch (err) {
                     if (!this.ircOpts.ignoreBadMessages && !this.requestedDisconnect) {
                         throw err;

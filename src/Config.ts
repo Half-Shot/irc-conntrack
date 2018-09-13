@@ -12,52 +12,6 @@ const PROTECTED_FIELDS = [
 ];
 
 export class Config {
-    private serverMap: Map<string, any>;
-
-    private constructor(private doc: any, readonly filename?: string) {
-        if (!log) {
-            log = new Log("Config");
-        }
-
-        this.serverMap = new Map();
-        this.validateDocument();
-        this.doc.servers.forEach((serverDoc: any) => {
-            const server = new ConfigServer(serverDoc);
-            this.serverMap.set(serverDoc.name, server);
-        });
-    }
-
-    public static parseFile(filename: string): Config {
-        if (!log) {
-            log = new Log("Config");
-        }
-
-        const contents = fs.readFileSync(filename, "utf-8");
-        log.info(`Read from ${filename}`);
-        return Config.parseYaml(contents, filename);
-    }
-
-    public static parseYaml(yamlString: string, filename?: string): Config {
-        if (!log) {
-            log = new Log("Config");
-        }
-
-        return new Config(Yaml.load(yamlString), filename);
-    }
-
-    private validateDocument() {
-        if (this.doc.servers === undefined || this.doc.servers.length < 1) {
-            throw new Error("'servers' is empty or not defined.");
-        }
-        if (!this.doc["access-token"]) {
-            throw new Error("'access-token' is not defined.");
-        }
-    }
-
-    public setOption(key: string, value: string|number) {
-        log.info(`Set ${key}=${value}`);
-        this.doc[key] = value;
-    }
 
     public get bindAddress(): string {
         return this.doc["bind-address"] || "127.0.0.1";
@@ -85,6 +39,47 @@ export class Config {
 
     public get rawDocument(): any {
         return this.doc;
+    }
+
+    public get servers(): ConfigServer[] {
+        return [...this.serverMap.values()];
+    }
+
+    public static parseFile(filename: string): Config {
+        if (!log) {
+            log = new Log("Config");
+        }
+
+        const contents = fs.readFileSync(filename, "utf-8");
+        log.info(`Read from ${filename}`);
+        return Config.parseYaml(contents, filename);
+    }
+
+    public static parseYaml(yamlString: string, filename?: string): Config {
+        if (!log) {
+            log = new Log("Config");
+        }
+
+        return new Config(Yaml.load(yamlString), filename);
+    }
+    private serverMap: Map<string, any>;
+
+    private constructor(private doc: any, readonly filename?: string) {
+        if (!log) {
+            log = new Log("Config");
+        }
+
+        this.serverMap = new Map();
+        this.validateDocument();
+        this.doc.servers.forEach((serverDoc: any) => {
+            const server = new ConfigServer(serverDoc);
+            this.serverMap.set(serverDoc.name, server);
+        });
+    }
+
+    public setOption(key: string, value: string|number) {
+        log.info(`Set ${key}=${value}`);
+        this.doc[key] = value;
     }
 
     public applyConfig(newCfg: Config) {
@@ -116,8 +111,13 @@ export class Config {
         return this.serverMap.get(server);
     }
 
-    public get servers(): ConfigServer[] {
-        return [...this.serverMap.values()];
+    private validateDocument() {
+        if (this.doc.servers === undefined || this.doc.servers.length < 1) {
+            throw new Error("'servers' is empty or not defined.");
+        }
+        if (!this.doc["access-token"]) {
+            throw new Error("'access-token' is not defined.");
+        }
     }
 }
 

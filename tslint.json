@@ -26,6 +26,7 @@
       "severity": "warning"
     },
     "no-unused-expression": true,
-    "prefer-const": true
+    "prefer-const": true,
+    "indent": [true, "spaces", 4]
   }
 }

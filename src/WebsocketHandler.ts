@@ -34,13 +34,12 @@ export class WebsocketHandler extends EventEmitter {
             this.dropConnection(this.connections.keys().next().value);
         }
 
-        this.emit("connected", host, connection);
-
         // Bind handlers
         connection.onopen = this.onOpen.bind(this);
         connection.onmessage = this.onMessage.bind(this);
         connection.onerror = this.onError.bind(this);
         connection.onclose = this.onClose.bind(this);
+        this.emit("connected", host, connection);
     }
 
     public dropConnection(host: string) {

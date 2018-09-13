@@ -1,9 +1,9 @@
 import { Config } from "./Config";
 import { WebsocketHandler, IWsCommand } from "./WebsocketHandler";
-import { IConnectionState } from "./Rest/ConnectionsResponse";
+import { IConnectionState } from "./Rest/IConnectionsResponse";
 import { IrcClient, IrcConnectionOpts } from "./Irc/IrcClient";
 import * as Uuid from "uuid/v4";
-import { IErrorResponse, ERRCODES } from "./Rest/ErrorResponse";
+import { IErrorResponse, ERRCODES } from "./Rest/IErrorResponse";
 import { Log } from "./Log";
 import * as Ws from "ws";
 
@@ -20,6 +20,9 @@ export class ConnectionTracker {
     }
 
     public getConnectionsForServer(serverName: string, detail: string): IConnectionState[] | string[] {
+        if (!["ids", "state"].includes(detail)) {
+            throw new Error("Unknown value for 'detail' flag");
+        }
         log.verbose(`Fetching connections for ${serverName}`);
         if (!this.serverClients.has(serverName)) {
             return [];
@@ -29,15 +32,15 @@ export class ConnectionTracker {
         });
         if (detail === "ids") {
             return clients.map((client) => client.uuid);
-        } else if (detail === "state") {
-            return clients.map((client) => { return {
+        } // state
+        return clients.map((client) => {
+            return {
                 channels: client.channels,
                 id: client.uuid,
                 mode: client.usermode,
                 nick: client.nickname,
-            } as IConnectionState; });
-        }
-        throw new Error("Unknown value for 'detail' flag");
+            };
+        }) as IConnectionState[];
     }
 
     public openConnection(serverName: string, opts: IrcConnectionOpts): Promise<string> {

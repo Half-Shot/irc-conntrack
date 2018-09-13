@@ -8,7 +8,7 @@ export class MockIrcd {
     public dataCount: number;
     private listener: Server;
     private sockets: Socket[];
-    private dataPromiseTrigger: any;
+    private dataPromiseTrigger?: () => void;
     private dataExpecting: number;
 
     constructor() {
@@ -21,8 +21,8 @@ export class MockIrcd {
         this.sockets = [];
     }
 
-    public spinUp(): Promise<void> {
-        this.listener.listen(5544, "127.0.0.1");
+    public spinUp(port: number = 5544): Promise<void> {
+        this.listener.listen(port, "127.0.0.1");
         return new Promise((resolve, reject) => {
             this.listener.once("error", (err) => {
                 reject(err);
@@ -46,13 +46,13 @@ export class MockIrcd {
         });
     }
 
-    public waitForData(expectedCount: number, timeout: number): Promise<void> {
+    public waitForData(expectedCount: number, timeout?: number): Promise<void> {
         this.dataExpecting = expectedCount;
         return new Promise((resolve, reject) => {
-            const tOut = setTimeout(() => {
+            const tOut = timeout !== null ? setTimeout(() => {
                 this.dataPromiseTrigger = undefined;
                 reject();
-            }, timeout);
+            }, timeout) : undefined;
             this.dataPromiseTrigger = () => {
                 resolve();
                 this.dataPromiseTrigger = undefined;

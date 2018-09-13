@@ -11,6 +11,12 @@ const PROTECTED_FIELDS = [
         "backlog-limit",
 ];
 
+const DEFAULT_PORT = 9000;
+const DEFAULT_BACKLOG = 10;
+const DEFAULT_WS_CONNECTIONS = 5;
+
+const DEFAULT_IRC_CLIENTS = 50;
+
 export class Config {
 
     public get bindAddress(): string {
@@ -18,15 +24,15 @@ export class Config {
     }
 
     public get bindPort(): number {
-        return Number.parseInt(this.doc["bind-port"]) || 9000;
+        return Number.parseInt(this.doc["bind-port"]) || DEFAULT_PORT;
     }
 
     public get backlogLimit(): number {
-        return Number.parseInt(this.doc["backlog-limit"]) || 10;
+        return Number.parseInt(this.doc["backlog-limit"]) || DEFAULT_BACKLOG;
     }
 
     public get maximumWebsocketConnections(): number {
-        return Number.parseInt(this.doc["max-ws-connections"]) || 5;
+        return Number.parseInt(this.doc["max-ws-connections"]) || DEFAULT_WS_CONNECTIONS;
     }
 
     public get accessToken(): string {
@@ -104,7 +110,6 @@ export class Config {
             this.setOption(key, newCfg.rawDocument[key]);
         });
         log.info("Updated config with new values");
-        console.log(this.rawDocument);
     }
 
     public serverConfig(server: string): ConfigServer {
@@ -141,8 +146,9 @@ export class ConfigServer {
     }
 
     public get addressTuple(): Array<{port: number, host: string}> {
+        const SPLIT_N = 2;
         return this.addresses.map((addr) => {
-            const split = addr.split(":", 2);
+            const split = addr.split(":", SPLIT_N);
             return {
                 host: split[0],
                 port: Number.parseInt(split[1]),
@@ -155,7 +161,7 @@ export class ConfigServer {
     }
 
     public get maxConnections(): number {
-        return Number.parseInt(this.doc["max-connections"]) || 50;
+        return Number.parseInt(this.doc["max-connections"]) || DEFAULT_IRC_CLIENTS;
     }
 }
 

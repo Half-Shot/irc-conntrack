@@ -2,7 +2,6 @@ import { Config } from "./Config";
 import { WebsocketHandler, IWsCommand } from "./WebsocketHandler";
 import { IConnectionState } from "./Rest/ConnectionsResponse";
 import { IrcClient, IrcConnectionOpts } from "./Irc/IrcClient";
-import { SocketConstructorOpts, SocketConnectOpts, TcpSocketConnectOpts } from "net";
 import * as Uuid from "uuid/v4";
 import { IErrorResponse, ERRCODES } from "./Rest/ErrorResponse";
 import { Log } from "./Log";
@@ -20,7 +19,7 @@ export class ConnectionTracker {
         wsHandler.on("command", this.runCommand.bind(this));
     }
 
-    public getConnectionsForServer(serverName: string, detail: string): IConnectionState[] | String[] {
+    public getConnectionsForServer(serverName: string, detail: string): IConnectionState[] | string[] {
         log.verbose(`Fetching connections for ${serverName}`);
         if (!this.serverClients.has(serverName)) {
             return [];
@@ -32,10 +31,10 @@ export class ConnectionTracker {
             return clients.map((client) => client.uuid);
         } else if (detail === "state") {
             return clients.map((client) => { return {
-                id: client.uuid,
-                nick: client.nickname,
                 channels: client.channels,
+                id: client.uuid,
                 mode: client.usermode,
+                nick: client.nickname,
             } as IConnectionState; });
         }
         throw new Error("Unknown value for 'detail' flag");
@@ -73,7 +72,9 @@ export class ConnectionTracker {
     }
 
     public runCommand(cmd: IWsCommand, ws: Ws) {
-        log.info(`runCommand - ${cmd.client_id.substr(0, 12)} - ${cmd.id.substr(0, 12)}`);
+        const UUID_SHORT_LENGTH = 12;
+        const ID_SHORT_LENGTH = 12;
+        log.info(`runCommand ${cmd.client_id.substr(0, UUID_SHORT_LENGTH)} ${cmd.id.substr(0, ID_SHORT_LENGTH)}`);
         const client = this.ircClients.get(cmd.client_id);
         if (!client) {
             ws.send(JSON.stringify({id: cmd.id, errcode: ERRCODES.clientNotFound}));

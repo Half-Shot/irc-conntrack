@@ -1,3 +1,5 @@
+// irc-colors has no typings yet.
+// tslint:disable-next-line:no-var-requires
 const ircColors = require("irc-colors");
 import {Codes} from "./IrcCodes";
 import { Log } from "../Log";
@@ -28,6 +30,9 @@ export interface IMessage {
  * @return {Object} A parsed message object.
  */
 export function parseMessage(line: string, stripColors: boolean): IMessage {
+    const I_NICK = 1;
+    const I_USER = 3;
+    const I_HOST = 4;
     const message: IMessage = {
         args: [],
         rawLine: line,
@@ -46,9 +51,9 @@ export function parseMessage(line: string, stripColors: boolean): IMessage {
         line = line.replace(/^:[^ ]+ +/, "");
         match = message.prefix.match(/^([_a-zA-Z0-9\[\]\\`^{}|-]*)(!([^@]+)@(.*))?$/);
         if (match) {
-            message.nick = match[1];
-            message.user = match[3];
-            message.host = match[4];
+            message.nick = match[I_NICK];
+            message.user = match[I_USER];
+            message.host = match[I_HOST];
         } else {
             message.server = message.prefix;
         }
@@ -72,10 +77,11 @@ export function parseMessage(line: string, stripColors: boolean): IMessage {
     }
 
     message.args = [];
-    let middle, trailing;
+    let middle: string;
+    let trailing: string|null = null;
 
     // Parse parameters
-    if (line.search(/^:|\s+:/) != -1) {
+    if (line.search(/^:|\s+:/) !== -1) {
         match = line.match(/(.*?)(?:^:|\s+:)(.*)/);
         if (match === null) {
             message.badFormat = true;
@@ -92,7 +98,7 @@ export function parseMessage(line: string, stripColors: boolean): IMessage {
         message.args = middle.split(/ +/);
     }
 
-    if (typeof (trailing) != "undefined" && trailing.length) {
+    if (trailing !== null && trailing.length) {
         message.args.push(trailing);
     }
 

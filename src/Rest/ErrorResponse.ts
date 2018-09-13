@@ -1,6 +1,6 @@
 export interface IErrorResponse {
-    errcode: String;
-    error: String;
+    errcode: string;
+    error: string;
 }
 
 export const ERRCODES = {

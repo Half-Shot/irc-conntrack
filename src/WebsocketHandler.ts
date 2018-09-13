@@ -11,7 +11,7 @@ export interface IWsCommand {
     client_id: string;
     id: string;
     type: string; // ["raw","join"]
-    content: any;
+    content: object|string;
 }
 
 export class WebsocketHandler extends EventEmitter {
@@ -54,9 +54,9 @@ export class WebsocketHandler extends EventEmitter {
 
     }
 
-    public onIrcMessage(event: string, client_id: string, msg: IMessage) {
+    public onIrcMessage(event: string, id: string, msg: IMessage) {
         this.connections.forEach((cn) => {
-            cn.send({event, client_id, msg});
+            cn.send({event, client_id: id, msg});
         });
     }
 
@@ -76,11 +76,11 @@ export class WebsocketHandler extends EventEmitter {
         }
     }
 
-    private onError(e: {error: any, message: string, type: string, target: Ws}) {
+    private onError(e: {error: object|string, message: string, type: string, target: Ws}) {
         log.warn(`onError error=${e.error} type=${e.type} msg=${e.message}`);
     }
 
-    private onClose(e: {wasClean: boolean, code: Number, reason: string, target: Ws}) {
+    private onClose(e: {wasClean: boolean, code: number, reason: string, target: Ws}) {
         log.info(`onClose code=${e.code} reason=${e.reason} wasClean=${e.wasClean}`);
     }
 }

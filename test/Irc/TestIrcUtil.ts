@@ -9,7 +9,7 @@ describe("IrcUtil", () => {
         it("should not map case if message contains no arguments", () => {
             const msg = {badFormat: false, args: []};
             IrcUtil.casemap(msg, 1, supported);
-            expect(msg.args).to.be.empty;
+            expect(msg.args).to.have.lengthOf(0);
         });
         it("should not map case if message doesn't contain index", () => {
             const msg = {badFormat: false, args: ["#aPPle"]};

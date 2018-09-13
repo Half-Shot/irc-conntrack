@@ -5,7 +5,7 @@ import { IMessage } from "./IMessage";
 const KNOWN_CASE_MAPPINGS = ["ascii", "rfc1459", "strict-rfc1459"];
 
 export class IrcUtil {
-    public static convertEncoding(buffer: Buffer, encoding: Boolean): Buffer {
+    public static convertEncoding(buffer: Buffer, encoding: boolean): Buffer {
         const out = buffer;
         // TODO: Fix this
         // try {
@@ -33,7 +33,7 @@ export class IrcUtil {
         msg.args[index] = IrcUtil.toLowerCase(msg.args[index], supported);
     }
 
-    public static toLowerCase = function(str: string, supported: IIrcSupported) {
+    public static toLowerCase(str: string, supported: IIrcSupported) {
         if (KNOWN_CASE_MAPPINGS.indexOf(supported.casemapping) === -1) {
             return str;
         }
@@ -51,5 +51,5 @@ export class IrcUtil {
             replace(/\\/g, "|");
         }
         return lower;
-    };
+    }
 }

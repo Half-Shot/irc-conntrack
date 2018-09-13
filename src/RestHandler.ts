@@ -11,6 +11,7 @@ import { Log } from "./Log";
 import { IConnectionsResponse } from "./Rest/ConnectionsResponse";
 import { IOpenResponse } from "./Rest/OpenResponse";
 import { IrcConnectionOpts } from "./Irc/IrcClient";
+import * as HttpStatus from "http-status-codes";
 
 const log = new Log("RestHandler");
 const logHttp = new Log("http");
@@ -60,16 +61,15 @@ export class RestHandler {
     }
 
     private openConnection(req: Request, res: Response) {
-        console.log(req.body);
         this.connTracker.openConnection(req.params.server,
             req.body as IrcConnectionOpts,
         ).then((id: string) => {
-            res.statusCode = 200;
+            res.statusCode = HttpStatus.OK;
             res.send({
                 id,
             } as IOpenResponse);
-        }).catch((err: any) => {
-            res.statusCode = 500;
+        }).catch((err: Error) => {
+            res.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
             res.send(err);
         });
     }
@@ -88,7 +88,7 @@ export class RestHandler {
 
     private updateConfig(req: Request, res: Response) {
         if (this.config.filename === undefined) {
-            res.statusCode = 500;
+            res.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
             res.send({
                 errcode: ERRCODES.genericFail,
                 error: "Config has no filename",
@@ -100,7 +100,7 @@ export class RestHandler {
             newConfig = Config.parseFile(this.config.filename);
         } catch (e) {
             log.error("Config file failed to parse", e);
-            res.statusCode = 500;
+            res.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
             res.send({
                 errcode: ERRCODES.genericFail,
                 error: "Config failed to parse:" + e.message ,
@@ -112,7 +112,7 @@ export class RestHandler {
             this.readConfig(req, res);
         } catch (e) {
             log.error("Config file could not be applied", e);
-            res.statusCode = 500;
+            res.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
             res.send({
                 errcode: ERRCODES.genericFail,
                 error: "Config file could not be applied:" + e.message ,
@@ -132,7 +132,7 @@ export class RestHandler {
 
         if (token === undefined) {
             logHttp.warn("rejecting because token was not given");
-            res.statusCode = 400;
+            res.statusCode = HttpStatus.BAD_REQUEST;
             res.send({
                 errcode: ERRCODES.missingToken,
                 error: "No token given",
@@ -144,7 +144,7 @@ export class RestHandler {
             next();
         } else {
             logHttp.warn("rejecting because token was invalid");
-            res.statusCode = 401;
+            res.statusCode = HttpStatus.UNAUTHORIZED;
             res.send({
                 errcode: ERRCODES.badToken,
                 error: "Token was invalid",

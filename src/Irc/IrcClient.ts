@@ -22,20 +22,21 @@ export interface IrcConnectionOpts {
 
 export class IrcClient extends Socket {
     public supported: IIrcSupported;
-    private _motd: string = "";
+    private serverMotd: string = "";
     private log: Log;
     private dataBuffer: Buffer;
     private dataBufferLength: number;
-    private requestedDisconnect: Boolean = false;
+    private requestedDisconnect: boolean = false;
     // private msgParser: MessageParser;
     private nick?: string;
     private whoisData: Map<string, any> = new Map();
-    private _channels: string[] = [];
+    private chanlist: string[] = [];
     private mode: string = "";
 
     constructor(readonly uuid: string, private ircOpts: IrcConnectionOpts, opts?: SocketConstructorOpts) {
         super(opts);
-        this.log = new Log("Cli#" + this.uuid.substr(0, 12));
+        const LOG_UUID_LENGTH = 12;
+        this.log = new Log("Cli#" + this.uuid.substr(0, LOG_UUID_LENGTH));
         this.supported = getDefaultSupported();
         this.dataBuffer = Buffer.alloc(BUFFER_SIZE);
         this.dataBufferLength = 0;
@@ -44,7 +45,7 @@ export class IrcClient extends Socket {
     }
 
     public get motd() {
-        return this._motd;
+        return this.serverMotd;
     }
 
     public get nickname() {
@@ -52,7 +53,7 @@ export class IrcClient extends Socket {
     }
 
     public get channels() {
-        return this._channels;
+        return this.chanlist;
     }
 
     public get usermode() {
@@ -65,6 +66,7 @@ export class IrcClient extends Socket {
         const socketConnectOpts: TcpSocketConnectOpts = {
             port: address.port,
             host: address.host,
+            // tslint:disable-next-line:no-magic-numbers
             family: server.isIpv6 ? 6 : 4,
         };
         return new Promise((resolve, reject) => {
@@ -106,11 +108,11 @@ export class IrcClient extends Socket {
 
     public appendMotd(text: string, clear: boolean = false, finished: boolean = false) {
         if (clear) {
-            this._motd = "";
+            this.serverMotd = "";
         }
-        this._motd += text;
+        this.serverMotd += text;
         if (finished) {
-            this.emit("motd", this._motd);
+            this.emit("motd", this.serverMotd);
         }
     }
 
@@ -159,13 +161,17 @@ export class IrcClient extends Socket {
     }
 
     private onData(chunk: string|Buffer) {
+        const DELIMITER = "\r\n";
         let finished;
         if (typeof (chunk) === "string") {
             this.dataBuffer.write(chunk);
-            finished = chunk.endsWith("\r\n");
+            finished = chunk.endsWith(DELIMITER);
         } else {
             chunk.copy(this.dataBuffer, this.dataBufferLength);
-            finished = chunk.slice(chunk.length - 2, 2).equals(new Uint8Array([13, 10]));
+            finished = chunk.slice(chunk.length - 2, 2).equals(new Uint8Array([
+                DELIMITER.charCodeAt(0),
+                DELIMITER.charCodeAt(1),
+            ]));
         }
         this.dataBufferLength += chunk.length;
         if (this.dataBufferLength > BUFFER_SIZE) {

@@ -1,5 +1,5 @@
 export interface IConnectionsResponse {
-    connections: IConnectionState[] | String[];
+    connections: IConnectionState[] | string[];
 }
 
 export interface IConnectionState {

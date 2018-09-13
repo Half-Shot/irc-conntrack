@@ -2,16 +2,19 @@
   "extends": "tslint:recommended",
   "rules": {
     "ordered-imports": false,
-    "no-trailing-whitespace": "error",
+    "no-trailing-whitespace": {
+     "severity": "error" 
+    },
     "max-classes-per-file": {
       "severity": "warning"
     },
-    "object-literal-sort-keys": "off",
+    "object-literal-sort-keys": false,
     "no-any": {
       "severity": "warning"
     },
     "arrow-return-shorthand": true,
-    "no-magic-numbers": true,
+    /* We allow 2 because splitting usually uses it. */
+    "no-magic-numbers": [true, -1, 0, 1 , 2],
     "prefer-for-of": true,
     "typedef": {
       "severity": "warning"
@@ -27,6 +30,7 @@
     },
     "no-unused-expression": true,
     "prefer-const": true,
-    "indent": [true, "spaces", 4]
+    "indent": [true, "spaces", 4],
+    "radix": false
   }
 }

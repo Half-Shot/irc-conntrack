@@ -4,21 +4,23 @@ import * as Mock from "mock-require";
 let callbacks = {} as any;
 let useFunctions: any[] = [];
 
+const EXPECTED_CALLBACK_COUNT = 7;
+
 const expressMock = (() => {
     return {
-        get: (params: string, cb: Function) => {
+        get: (params: string, cb: () => void) => {
             callbacks["get:" + params] = cb;
         },
-        post: (params: string, cb: Function) => {
+        post: (params: string, cb: () => void) => {
             callbacks["post:" + params] = cb;
         },
-        ws: (params: string, cb: Function) => {
+        ws: (params: string, cb: () => void) => {
             callbacks["ws:" + params] = cb;
         },
         listen: (port: number) => {
 
         },
-        use: (fn: Function) => {
+        use: (fn: () => void) => {
             useFunctions.push(fn);
         },
     };
@@ -51,7 +53,7 @@ describe("RestHandler", () => {
     it("should setup all handers", () => {
         const c = new RestHandler({} as any, {} as any, {} as any);
         c.configure();
-        expect(Object.keys(callbacks)).to.have.lengthOf(7);
+        expect(Object.keys(callbacks)).to.have.lengthOf(EXPECTED_CALLBACK_COUNT);
     });
    });
    describe("checkToken", () => {

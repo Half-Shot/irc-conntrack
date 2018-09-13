@@ -5,11 +5,11 @@ import * as Ws from "ws";
 import { Request, Response, NextFunction } from "express";
 import { ConnectionTracker } from "./ConnectionTracker";
 import { Config } from "./Config";
-import { IErrorResponse, ERRCODES } from "./Rest/ErrorResponse";
+import { IErrorResponse, ERRCODES } from "./Rest/IErrorResponse";
 import { WebsocketHandler } from "./WebsocketHandler";
 import { Log } from "./Log";
-import { IConnectionsResponse } from "./Rest/ConnectionsResponse";
-import { IOpenResponse } from "./Rest/OpenResponse";
+import { IConnectionsResponse } from "./Rest/IConnectionsResponse";
+import { IOpenResponse } from "./Rest/IOpenResponse";
 import { IrcConnectionOpts } from "./Irc/IrcClient";
 import * as HttpStatus from "http-status-codes";
 

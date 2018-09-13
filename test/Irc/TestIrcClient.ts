@@ -130,4 +130,16 @@ describe("IrcClient", () => {
             });
         });
     });
+    describe("appendMotd", () => {
+        it("should clear, append and emit", (done) => {
+            client = createClient();
+            client.on("motd", (motdText) => {
+                expect(motdText).to.be.equal("HelloWho's a good boy?You!");
+                done();
+            });
+            client.appendMotd("Hello", true);
+            client.appendMotd("Who's a good boy?");
+            client.appendMotd("You!", false, true);
+        });
+    });
 });

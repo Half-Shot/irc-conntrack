@@ -6,7 +6,7 @@ import { ERRCODES, IErrorResponse} from "../Rest/IErrorResponse";
 import { IIrcSupported, getDefaultSupported } from "./IrcSupported";
 import { IrcUtil } from "./IrcUtil";
 import { parseMessage, IMessage } from "./IMessage";
-// import { MessageParser } from "./MessageParser";
+import { MessageParser } from "./MessageParser";
 
 const DEFAULT_CONNECTION_TIMEOUT_MS = 10000;
 const BUFFER_SIZE = 1024;
@@ -208,7 +208,7 @@ export class IrcClient extends Socket {
                     if (message.badFormat) {
                         throw new Error("Bad format");
                     }
-                    // this.msgParser.onMessage(message);
+                    this.msgParser.actOnMessage(message);
                 } catch (err) {
                     if (!this.ircOpts.ignoreBadMessages && !this.requestedDisconnect) {
                         throw err;

@@ -543,4 +543,8 @@ export const Codes: { [code: string]: {name: string, type: string}} = {
         name: "err_usersdontmatch",
         type: "error",
     },
+     "903": {
+        name: "rpl_saslsuccess",
+        type: "reply",
+    },
 };

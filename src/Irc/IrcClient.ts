@@ -7,45 +7,36 @@ import { IIrcSupported, getDefaultSupported } from "./IrcSupported";
 import { IrcUtil } from "./IrcUtil";
 import { parseMessage, IMessage } from "./IMessage";
 import { MessageParser } from "./MessageParser";
+import { IrcState } from "./IrcState";
 
 const DEFAULT_CONNECTION_TIMEOUT_MS = 10000;
 const BUFFER_SIZE = 1024;
 const LINE_DELIMITER = new RegExp("\r\n|\r|\n");
 
+const NICK_CONFLICT_STRAT_NEXT_NICK = 0;
+const NICK_CONFLICT_STRAT_APPEND_NUMBER = 1;
+
 export interface IrcConnectionOpts {
     nicknames: string | string[];
+    realname: string;
+    username: string;
     connectionTimeout: number;
     detectEncoding: boolean;
     stripColors: boolean;
     ignoreBadMessages: boolean;
+    sasl: boolean;
+    password?: string;
+    nicknameConflictStrategy?: number;
 }
-
-export interface IIrcState {
-    motd: string;
-    channelList: string[];
-    nick?: string;
-    whoisData: Map<string, any>;
-    usermode?: string;
-}
-
-export const createIrcState = () => {
-    return {
-        motd: "",
-        channelList: new Array<string>(),
-        nick: undefined,
-        whoisData: new Map(),
-        usermode: undefined,
-    } as IIrcState;
-};
 
 export class IrcClient extends Socket {
     public supported: IIrcSupported;
-    private state: IIrcState;
+    private state: IrcState;
     private log: Log;
     private dataBuffer: Buffer;
     private dataBufferLength: number;
     private requestedDisconnect: boolean = false;
-    // private msgParser: MessageParser;
+    private msgParser: MessageParser;
 
     constructor(readonly uuid: string, private ircOpts: IrcConnectionOpts, opts?: SocketConstructorOpts) {
         super(opts);
@@ -54,8 +45,15 @@ export class IrcClient extends Socket {
         this.supported = getDefaultSupported();
         this.dataBuffer = Buffer.alloc(BUFFER_SIZE);
         this.dataBufferLength = 0;
-        this.state = createIrcState();
-        // this.msgParser = new MessageParser(this.uuid, this.state);
+        this.state = new IrcState();
+        this.state.requestedNickname = Array.isArray(this.ircOpts.nicknames) ?
+            this.ircOpts.nicknames[0] : this.ircOpts.nicknames;
+        this.msgParser = new MessageParser(this.uuid, this.state, this.supported);
+        this.msgParser.on("registered", this.onRegistered.bind(this));
+        this.msgParser.on("nickname_in_use", this.onNeedNewNick.bind(this));
+        this.msgParser.on("ping", (pingstring: string) => {
+            this.send("PONG", pingstring);
+        });
         // TODO: Message parser emits lots of things.
     }
 
@@ -64,7 +62,7 @@ export class IrcClient extends Socket {
     }
 
     public get nickname() {
-        return this.state.nick;
+        return this .state.nick;
     }
 
     public get channels() {
@@ -73,6 +71,10 @@ export class IrcClient extends Socket {
 
     public get usermode() {
         return this.state.usermode;
+    }
+
+    public get ircState() {
+        return Object.assign({}, this.state);
     }
 
     public initiate(server: ConfigServer): Promise<undefined> {
@@ -107,43 +109,13 @@ export class IrcClient extends Socket {
                     this.setEncoding("utf-8");
                 }
                 this.on("data", this.onData.bind(this));
-                this.ircSetup().then(() => {
+                this.onConnected().then(() => {
                     resolve();
                 });
             });
             this.log.verbose(`Connecting..`);
         });
     }
-
-    public ircSetup(): Promise<void> {
-        return this.send("CONNECT hello!\n");
-    }
-
-    /*- State Setting Functions: To be moved to a state interface */
-
-    public appendMotd(text: string, clear: boolean = false, finished: boolean = false) {
-        if (clear) {
-            this.state.motd = "";
-        }
-        this.state.motd += text;
-        if (finished) {
-            this.emit("motd", this.state.motd);
-        }
-    }
-
-    public setWhoisData(nick: string, key: string, value: string|string[], ifExists: boolean= false) {
-        if (ifExists && !this.state.whoisData.has(nick)) {
-            return;
-        }
-        const whois = this.state.whoisData.get(nick) || {nick};
-        whois[key] = value;
-    }
-
-    public addChannel(name: string, users: string, topic: string) {
-
-    }
-
-    /* Command functions for IRC */
 
     public send(...args: string[]): Promise<void> {
         if (this.requestedDisconnect) {
@@ -169,6 +141,41 @@ export class IrcClient extends Socket {
             }
         }
         return this.send("whois", nick);
+    }
+
+    // Client.prototype._handleCTCP = function(from, to, text, type, message) {
+    //     text = text.slice(1);
+    //     text = text.slice(0, text.indexOf('\u0001'));
+    //     var parts = text.split(' ');
+    //     this.emit('ctcp', from, to, text, type, message);
+    //     this.emit('ctcp-' + type, from, to, text, message);
+    //     if (type === 'privmsg' && text === 'VERSION')
+    //         this.emit('ctcp-version', from, to, message);
+    //     if (parts[0] === 'ACTION' && parts.length > 1)
+    //         this.emit('action', from, to, parts.slice(1).join(' '), message);
+    //     if (parts[0] === 'PING' && type === 'privmsg' && parts.length > 1)
+    //         this.ctcp(from, 'notice', text);
+    // };
+
+    private onConnected(): Promise<void> {
+        // TODO: Webirc support.
+        const sendPromises = [];
+        if (this.ircOpts.sasl) {
+            this.log.info("Requesting SASL capabilities");
+            sendPromises.push(this.send("CAP REQ", "sasl"));
+        } else if (this.ircOpts.password) {
+            this.log.info("Using provided password");
+            sendPromises.push(this.send("PASS", this.ircOpts.password));
+        }
+        sendPromises.push(this.send("NICK", this.state.requestedNickname));
+        // Assume this is the case unless we are told otherwise.
+        this.state.nick = this.state.requestedNickname;
+        this.state.updateMaxLineLength();
+        // Bitmap: https://tools.ietf.org/html/rfc2812#section-3.1.5
+        const USERMODE = "8";
+        sendPromises.push(this.send("USER", this.ircOpts.username, USERMODE, "*", this.ircOpts.realname));
+        this.emit("connect");
+        return Promise.all(sendPromises).then(() => { /* To stop typescript making this void[]*/ });
     }
 
     private onData(chunk: string|Buffer) {
@@ -217,4 +224,30 @@ export class IrcClient extends Socket {
             }
         });
     }
+
+    private async onRegistered() {
+        await this.whois(this.nickname);
+        // TODO: Need to update nick, hostname and maxlinelength with this.
+    }
+
+    private onNeedNewNick() {
+        let newNick;
+        if (this.ircOpts.nicknameConflictStrategy === NICK_CONFLICT_STRAT_APPEND_NUMBER) {
+            // TODO: Complete this.
+            throw new Error("Cannot set nick: NICK_CONFLICT_STRAT_APPEND_NUMBER not implemented.");
+        } else { // Defaults to: NICK_CONFLICT_STRAT_NEXT_NICK
+            if (Array.isArray(this.ircOpts.nicknames)) {
+                newNick = this.ircOpts.nicknames.pop();
+            }
+        }
+        if (!newNick) {
+            throw new Error("Cannot set nick: no more nicknames to try");
+        }
+        this.state.requestedNickname = newNick;
+        this.send("NICK", this.state.requestedNickname);
+        // Assume this is the case unless we are told otherwise.
+        this.state.nick = this.state.requestedNickname;
+        this.state.updateMaxLineLength();
+    }
+
  }

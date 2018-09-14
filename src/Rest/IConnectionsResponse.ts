@@ -1,10 +1,9 @@
+import { IrcState } from "../Irc/IrcState";
+
 export interface IConnectionsResponse {
     connections: IConnectionState[] | string[];
 }
 
-export interface IConnectionState {
+export interface IConnectionState extends IrcState {
     id: string;
-    nick: string;
-    channels: string[];
-    mode: string;
 }

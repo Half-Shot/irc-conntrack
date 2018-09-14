@@ -1,14 +1,14 @@
 import { IMessage } from "./IMessage";
-import { IrcClient } from "./IrcClient";
+import { IrcClient, IIrcState } from "./IrcClient";
 import { Log } from "../Log";
 import { EventEmitter } from "events";
 
 export class MessageParser extends EventEmitter {
     private log: Log;
 
-    constructor(private client: IrcClient) {
+    constructor(uuid: string, private state: IIrcState) {
         super();
-        this.log = new Log("MsgParser#"+client.uuid);
+        this.log = new Log(`MsgParser#${uuid}`);
     }
 
     private onWelcome(msg: IMessage) {
@@ -403,7 +403,7 @@ export class MessageParser extends EventEmitter {
             self._handleCTCP(from, to, text, 'privmsg', message);
             break;
         }
-        self.emit('message', from, to, text, message);
+        self.emit("message", from, to, text, message);
         if (self.supported.channel.types.indexOf(to.charAt(0)) !== -1) {
             self.emit('message#', from, to, text, message);
             self.emit('message' + to, from, text, message);
@@ -433,7 +433,7 @@ export class MessageParser extends EventEmitter {
     private onKill(msg: IMessage) {
         if (self.opt.debug)
                    util.log('QUIT: ' + message.prefix + ' ' + message.args.join(' '));
-               if (self.nick == message.nick) {
+        if (self.nick == message.nick) {
                    // TODO handle?
                    break;
                }
@@ -442,7 +442,7 @@ export class MessageParser extends EventEmitter {
                channels = [];
 
                // finding what channels a user is in?
-               Object.keys(self.chans).forEach(function(channame) {
+        Object.keys(self.chans).forEach(function(channame) {
                    var channel = self.chans[channame];
                    if (message.nick in channel.users) {
                        delete channel.users[message.nick];
@@ -451,7 +451,7 @@ export class MessageParser extends EventEmitter {
                });
 
                // who, reason, channels
-               self.emit('quit', message.nick, message.args[0], channels, message);
+        self.emit('quit', message.nick, message.args[0], channels, message);
     }
 
     private onInvite(msg: IMessage) {
@@ -519,156 +519,155 @@ export class MessageParser extends EventEmitter {
                break;
            case 'rpl_isupport':
               this.onISupport(msg);
-               break;
-           case 'rpl_yourhost':
-           case 'rpl_created':
-           case 'rpl_luserclient':
-           case 'rpl_luserop':
-           case 'rpl_luserchannels':
-           case 'rpl_luserme':
-           case 'rpl_localusers':
-           case 'rpl_globalusers':
-           case 'rpl_statsconn':
-           case 'rpl_luserunknown':
+              break;
+           case "rpl_yourhost":
+           case "rpl_created":
+           case "rpl_luserclient":
+           case "rpl_luserop":
+           case "rpl_luserchannels":
+           case "rpl_luserme":
+           case "rpl_localusers":
+           case "rpl_globalusers":
+           case "rpl_statsconn":
+           case "rpl_luserunknown":
                // Random welcome crap, ignoring
                break;
-           case 'err_nicknameinuse':
+           case "err_nicknameinuse":
                break;
-           case 'PING':
-               this.client.send('PONG', msg.args[0]);
-               this.emit('ping', msg.args[0]);
+           case "PING":
+               this.client.send("PONG", msg.args[0]);
+               this.emit("ping", msg.args[0]);
                break;
-           case 'PONG':
-               this.emit('pong', msg.args[0]);
+           case "PONG":
+               this.emit("pong", msg.args[0]);
                break;
-           case 'NOTICE':
+           case "NOTICE":
                this.onNotice(msg);
                break;
-           case 'MODE':
+           case "MODE":
                this.onMode(msg);
                break;
-           case 'NICK':
+           case "NICK":
                break;
-           case 'rpl_motdstart':
-               this.client.appendMotd(msg.args[1] + '\n', true);
+           case "rpl_motdstart":
+               this.client.appendMotd(msg.args[1] + "\n", true);
                break;
-           case 'rpl_motd':
-               this.client.appendMotd(msg.args[1] + '\n');
+           case "rpl_motd":
+               this.client.appendMotd(msg.args[1] + "\n");
                break;
-           case 'rpl_endofmotd':
-           case 'err_nomotd':
-               this.client.appendMotd(msg.args[1] + '\n', false);
+           case "rpl_endofmotd":
+           case "err_nomotd":
+               this.client.appendMotd(msg.args[1] + "\n", false);
                break;
-           case 'rpl_namreply':
+           case "rpl_namreply":
                this.onNames(msg);
                break;
-           case 'rpl_endofnames':
+           case "rpl_endofnames":
                this.onEndOfNames(msg);
                break;
-           case 'rpl_topic':
+           case "rpl_topic":
                this.onTopicReply(msg);
                break;
-           case 'rpl_away':
-               this.client.setWhoisData(msg.args[1], 'away', msg.args[2], true);
+           case "rpl_away":
+               this.client.setWhoisData(msg.args[1], "away", msg.args[2], true);
                break;
-           case 'rpl_whoisuser':
-               this.client.setWhoisData(msg.args[1], 'user', msg.args[2]);
-               this.client.setWhoisData(msg.args[1], 'host', msg.args[3]);
-               this.client.setWhoisData(msg.args[1], 'realname', msg.args[5]);
+           case "rpl_whoisuser":
+               this.client.setWhoisData(msg.args[1], "user", msg.args[2]);
+               this.client.setWhoisData(msg.args[1], "host", msg.args[3]);
+               this.client.setWhoisData(msg.args[1], "realname", msg.args[5]);
                break;
-           case 'rpl_whoisidle':
-               this.client.setWhoisData(msg.args[1], 'idle', msg.args[2]);
+           case "rpl_whoisidle":
+               this.client.setWhoisData(msg.args[1], "idle", msg.args[2]);
                break;
-           case 'rpl_whoischannels':
+           case "rpl_whoischannels":
               // TODO - clean this up?
                if (msg.args.length < 3) {
                    return;
                }
-               this.client.setWhoisData(msg.args[1], 'channels', msg.args[2].trim().split(/\s+/));
+               this.client.setWhoisData(msg.args[1], "channels", msg.args[2].trim().split(/\s+/));
                break;
-           case 'rpl_whoisserver':
-               this.client.setWhoisData(msg.args[1], 'server', msg.args[2]);
-               this.client.setWhoisData(msg.args[1], 'serverinfo', msg.args[3]);
+           case "rpl_whoisserver":
+               this.client.setWhoisData(msg.args[1], "server", msg.args[2]);
+               this.client.setWhoisData(msg.args[1], "serverinfo", msg.args[3]);
                break;
-           case 'rpl_whoisoperator':
-               this.client.setWhoisData(msg.args[1], 'operator', msg.args[2]);
+           case "rpl_whoisoperator":
+               this.client.setWhoisData(msg.args[1], "operator", msg.args[2]);
                break;
-           case '330': // rpl_whoisaccount?
-               this.client.setWhoisData(msg.args[1], 'account', msg.args[2]);
-               this.client.setWhoisData(msg.args[1], 'accountinfo', msg.args[3]);
+           case "330": // rpl_whoisaccount?
+               this.client.setWhoisData(msg.args[1], "account", msg.args[2]);
+               this.client.setWhoisData(msg.args[1], "accountinfo", msg.args[3]);
                break;
-           case 'rpl_endofwhois':
+           case "rpl_endofwhois":
                this.emit("whois", msg.args[1]);
                break;
-           case 'rpl_liststart':
-               this.emit('channellist_start');
+           case "rpl_liststart":
+               this.emit("channellist_start");
                break;
-           case 'rpl_list':
+           case "rpl_list":
                this.client.addChannel(msg.args[1], msg.args[2], msg.args[3]);
-               this.emit('channellist_item', msg.args[1]);
+               this.emit("channellist_item", msg.args[1]);
                break;
-           case 'rpl_listend':
-               this.emit('channellist');
+           case "rpl_listend":
+               this.emit("channellist");
                break;
-           case 'rpl_topicwhotime':
+           case "rpl_topicwhotime":
                this.onTopicWhoTime(msg);
                break;
-           case 'TOPIC':
+           case "TOPIC":
                this.onTopic(msg);
                break;
-           case 'rpl_channelmodeis':
+           case "rpl_channelmodeis":
                this.onChannelModeIs(msg);
                break;
-           case 'rpl_creationtime':
+           case "rpl_creationtime":
                self._casemap(message, 1);
                channel = self.chanData(message.args[1]);
                if (channel) {
                    channel.created = message.args[2];
                }
                break;
-           case 'JOIN':
+           case "JOIN":
                this.onJoin(msg);
                break;
-           case 'PART':
+           case "PART":
                this.onPart(msg);
                break;
-           case 'KICK':
+           case "KICK":
                this.onKick(msg);
                break;
-           case 'KILL':
+           case "KILL":
                this.onKill(msg);
                break;
-           case 'PRIVMSG':
+           case "PRIVMSG":
                this.onPrivMsg(msg);
                break;
-           case 'INVITE':
+           case "INVITE":
                this.onInvite(msg);
                break;
-           case 'QUIT':
+           case "QUIT":
                this.onQuit(msg);
                break;
            // for sasl
-           case 'CAP':
+           case "CAP":
                this.onCap(msg);
                break;
-           case 'AUTHENTICATE':
+           case "AUTHENTICATE":
                this.onAuthenticate(msg);
                break;
-           case '903':
-               self.send('CAP', 'END');
+           case "903":
+               self.send("CAP", "END");
                break;
-           case 'err_unavailresource':
+           case "err_unavailresource":
            // err_unavailresource has been seen in the wild on Freenode when trying to
            // connect with the nick 'boot'. I'm guessing they have reserved that nick so
            // no one can claim it. The error handling though is identical to offensive word
            // nicks hence the fall through here.
-           case 'err_erroneusnickname':
+           case "err_erroneusnickname":
                this.onErroneusNickname(msg);
                break;
-
            default:
-               if (msg.commandType == 'error') {
-                   this.emit('error', msg);
+               if (msg.commandType == "error") {
+                   this.emit("error", msg);
                    this.log.warn(`Error on ${msg.command} ${msg.rawCommand}`);
                    return;
                }

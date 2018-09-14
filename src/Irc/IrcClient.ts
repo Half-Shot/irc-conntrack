@@ -20,18 +20,32 @@ export interface IrcConnectionOpts {
     ignoreBadMessages: boolean;
 }
 
+export interface IIrcState {
+    motd: string;
+    channelList: string[];
+    nick?: string;
+    whoisData: Map<string, any>;
+    usermode?: string;
+}
+
+export const createIrcState = () => {
+    return {
+        motd: "",
+        channelList: new Array<string>(),
+        nick: undefined,
+        whoisData: new Map(),
+        usermode: undefined,
+    } as IIrcState;
+};
+
 export class IrcClient extends Socket {
     public supported: IIrcSupported;
-    private serverMotd: string = "";
+    private state: IIrcState;
     private log: Log;
     private dataBuffer: Buffer;
     private dataBufferLength: number;
     private requestedDisconnect: boolean = false;
     // private msgParser: MessageParser;
-    private nick?: string;
-    private whoisData: Map<string, any> = new Map();
-    private chanlist: string[] = [];
-    private mode: string = "";
 
     constructor(readonly uuid: string, private ircOpts: IrcConnectionOpts, opts?: SocketConstructorOpts) {
         super(opts);
@@ -40,24 +54,25 @@ export class IrcClient extends Socket {
         this.supported = getDefaultSupported();
         this.dataBuffer = Buffer.alloc(BUFFER_SIZE);
         this.dataBufferLength = 0;
-        // this.msgParser = new MessageParser(this);
+        this.state = createIrcState();
+        // this.msgParser = new MessageParser(this.uuid, this.state);
         // TODO: Message parser emits lots of things.
     }
 
     public get motd() {
-        return this.serverMotd;
+        return this.state.motd;
     }
 
     public get nickname() {
-        return this.nick;
+        return this.state.nick;
     }
 
     public get channels() {
-        return this.chanlist;
+        return this.state.channelList;
     }
 
     public get usermode() {
-        return this.mode;
+        return this.state.usermode;
     }
 
     public initiate(server: ConfigServer): Promise<undefined> {
@@ -108,23 +123,19 @@ export class IrcClient extends Socket {
 
     public appendMotd(text: string, clear: boolean = false, finished: boolean = false) {
         if (clear) {
-            this.serverMotd = "";
+            this.state.motd = "";
         }
-        this.serverMotd += text;
+        this.state.motd += text;
         if (finished) {
-            this.emit("motd", this.serverMotd);
+            this.emit("motd", this.state.motd);
         }
-    }
-
-    public setGivenNick(nick: string) {
-        this.nick = nick;
     }
 
     public setWhoisData(nick: string, key: string, value: string|string[], ifExists: boolean= false) {
-        if (ifExists && !this.whoisData.has(nick)) {
+        if (ifExists && !this.state.whoisData.has(nick)) {
             return;
         }
-        const whois = this.whoisData.get(nick) || {nick};
+        const whois = this.state.whoisData.get(nick) || {nick};
         whois[key] = value;
     }
 
@@ -152,7 +163,7 @@ export class IrcClient extends Socket {
 
     public whois(nick?: string): Promise<any> {
         if (nick === undefined) {
-            nick = this.nick;
+            nick = this.state.nick;
             if (nick === undefined) {
                 return Promise.reject("Own nick not known yet");
             }

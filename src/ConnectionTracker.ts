@@ -34,12 +34,9 @@ export class ConnectionTracker {
             return clients.map((client) => client.uuid);
         } // state
         return clients.map((client) => {
-            return {
-                channels: client.channels,
-                id: client.uuid,
-                mode: client.usermode,
-                nick: client.nickname,
-            };
+            const state = client.ircState as IConnectionState;
+            state.id = client.uuid;
+            return state;
         }) as IConnectionState[];
     }
 

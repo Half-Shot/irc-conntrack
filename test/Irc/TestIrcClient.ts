@@ -21,10 +21,13 @@ let client: IrcClient|null;
 function createClient(): IrcClient {
     return new IrcClient("some-uuid", {
         nicknames: "myname",
+        realname: "Mr Foo",
+        username: "foouser",
         stripColors: false,
         connectionTimeout: 0,
         detectEncoding: false,
         ignoreBadMessages: true,
+        sasl: false,
     });
 }
 
@@ -128,18 +131,6 @@ describe("IrcClient", () => {
             return msgPromise.then((msg: IMessage) => {
                 return expect(msg.badFormat).to.be.true;
             });
-        });
-    });
-    describe("appendMotd", () => {
-        it("should clear, append and emit", (done) => {
-            client = createClient();
-            client.on("motd", (motdText) => {
-                expect(motdText).to.be.equal("HelloWho's a good boy?You!");
-                done();
-            });
-            client.appendMotd("Hello", true);
-            client.appendMotd("Who's a good boy?");
-            client.appendMotd("You!", false, true);
         });
     });
 });

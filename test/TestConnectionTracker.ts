@@ -3,12 +3,14 @@ import * as Mock from "mock-require";
 import { IrcConnectionOpts } from "../src/Irc/IrcClient";
 
 class MockIrcClient {
-    public channels: string[] = ["foo", "bar"];
     public usermode: string = "usermode";
     public nickname: string;
+    public state: IrcState;
     constructor(public uuid: string, opts: IrcConnectionOpts) {
         /* stub */
         this.nickname = opts.nicknames as string;
+        this.state = new IrcState();
+        this.state.usermode = "usermode";
     }
 
     public on() {
@@ -34,6 +36,7 @@ import { ConnectionTracker } from "../src/ConnectionTracker";
 import { ConfigServer, Config } from "../src/Config";
 import { IConnectionState } from "../src/Rest/IConnectionsResponse";
 import { IErrorResponse, ERRCODES } from "../src/Rest/IErrorResponse";
+import { IrcState } from "../src/Irc/IrcState";
 
 let wsHooks: any = {};
 let config: Config;
@@ -53,6 +56,9 @@ const createConnectionTracker = async (createClients: number = 0) => {
     for (let i = 0; i < createClients; i++) {
         await t.openConnection("foo", {
             nicknames: `GoodDog#${i}`,
+            username: "",
+            realname: "",
+            sasl: false,
             connectionTimeout: -1,
             detectEncoding: false,
             stripColors: false,
@@ -87,9 +93,7 @@ describe("ConnectionTracker", () => {
             expect(nicks).to.contain("GoodDog#0");
             expect(nicks).to.contain("GoodDog#1");
             expect(nicks).to.contain("GoodDog#2");
-            expect(connections[0].channels).to.contain("foo");
-            expect(connections[0].channels).to.contain("bar");
-            expect(connections[0].mode).to.be.equal("usermode");
+            expect(connections[0].usermode).to.be.equal("usermode");
         });
         it("should throw if detail is not supported", async () => {
             const t = await createConnectionTracker();
@@ -102,6 +106,9 @@ describe("ConnectionTracker", () => {
             try {
                 await t.openConnection("fakeserver", {
                     nicknames: `BadDog`,
+                    username: "",
+                    realname: "",
+                    sasl: false,
                     connectionTimeout: -1,
                     detectEncoding: false,
                     stripColors: false,
@@ -119,6 +126,9 @@ describe("ConnectionTracker", () => {
             try {
                 await t.openConnection("foo", {
                     nicknames: `BadDog`,
+                    username: "",
+                    realname: "",
+                    sasl: false,
                     connectionTimeout: -1,
                     detectEncoding: false,
                     stripColors: false,

@@ -7,6 +7,18 @@ import { IIrcSupported } from "./IrcSupported";
 import { IrcUtil } from "./IrcUtil";
 import { INotice } from "./Messages/INotice";
 import { IMode } from "./Messages/IMode";
+/**
+ * This code is heavily based upon https://github.com/matrix-org/node-irc
+ * which is in turn based upon https://github.com/martynsmith/node-irc.
+ *
+ * The nessecity for this is the hugely complicated IRC "protocol" which
+ * usually requires some amount of empirical testing rather than reading RFCs.
+ * The existing librarys have good logic for parsing messages already and so it
+ * has been reworked into this project. The major changes are typed variables,
+ * and abstracting away the state from the client.
+ *
+ * The original file is https://github.com/matrix-org/node-irc/blob/master/lib/irc.js
+ */
 
 /**
  * This class parses IRC messages and emits an event out where possible.

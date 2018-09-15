@@ -1,3 +1,12 @@
+/**
+ * This code is heavily based upon https://github.com/matrix-org/node-irc
+ * which is in turn based upon https://github.com/martynsmith/node-irc.
+ *
+ * This file is largely unaltered from the source sans typing and formatting.
+ *
+ * The original file is https://github.com/matrix-org/node-irc/blob/master/lib/codes.js
+ */
+
 export const Codes: { [code: string]: {name: string, type: string}} = {
     "001": {
         name: "rpl_welcome",

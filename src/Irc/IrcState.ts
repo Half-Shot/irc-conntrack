@@ -10,6 +10,8 @@ interface IChannel {
     users: {[key: string]: Set<string>; };
     mode: Set<string>;
     created?: string;
+    topic?: string;
+    topicBy?: string;
 }
 
 /**
@@ -31,7 +33,7 @@ export class IrcState {
      * set this to something else.
      */
     public requestedNickname: string;
-    private chans: Map<string, IChannel>;
+    public chans: Map<string, IChannel>;
 
     constructor() {
         this.motd = "";

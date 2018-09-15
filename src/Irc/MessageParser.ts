@@ -7,6 +7,10 @@ import { IIrcSupported } from "./IrcSupported";
 import { IrcUtil } from "./IrcUtil";
 import { INotice } from "./Messages/INotice";
 import { IMode } from "./Messages/IMode";
+import { INick } from "./Messages/INick";
+import { INames } from "./Messages/INames";
+import { ITopic } from "./Messages/ITopic";
+
 /**
  * This code is heavily based upon https://github.com/matrix-org/node-irc
  * which is in turn based upon https://github.com/martynsmith/node-irc.
@@ -224,105 +228,114 @@ export class MessageParser extends EventEmitter {
     }
 
     private onNick(msg: IMessage) {
-        if (message.nick == self.nick) {
+        const newNick = msg.args[0];
+        if (msg.nick === undefined) {
+            this.log.verbose("Couldn't process nick change, 'nick' not given in message?!");
+            // We can't do anything with this.
+            return;
+        }
+        if (msg.nick === this.state.nick) {
             // the user just changed their own nick
-            self.nick = msg.args[0];
+            this.state.nick = newNick;
             this.state.updateMaxLineLength();
         }
+        this.log.verbose(`Nick for ${msg.nick} changed to ${this.state.nick}`);
 
-        if (self.opt.debug)
-            util.log("NICK: " + message.nick + " changes nick to " + msg.args[0]);
-
-        channels = [];
+        const channels: string[] = [];
 
         // finding what channels a user is in
-        Object.keys(self.chans).forEach(function(channame) {
-            var channel = self.chans[channame];
-            if (message.nick in channel.users) {
-                channel.users[msg.args[0]] = channel.users[message.nick];
-                delete channel.users[message.nick];
+        this.state.chans.forEach((channel, channame) => {
+            if (msg.nick !== undefined && msg.nick in channel.users) {
+                channel.users[newNick] = channel.users[msg.nick];
+                delete channel.users[msg.nick];
                 channels.push(channame);
             }
         });
 
-        // old nick, new nick, channels
-        self.emit("nick", message.nick, msg.args[0], channels, message);
+        this.emit("nick", Object.assign(msg, {newNick, channels}) as INick);
     }
 
     private onNames(msg: IMessage) {
-        IrcUtil.casemap(msg, 2);
-        channel = this.state.chanData(msg.args[2]);
-        if (!msg.args[3]) {
-            // No users
-            break;
+        const IDX_CHANNEL = 2;
+        const IDX_USERS = 3;
+        IrcUtil.casemap(msg, IDX_CHANNEL, this.supported);
+        const channel = this.state.chanData(msg.args[IDX_CHANNEL]);
+        if (!channel) {
+            return;
         }
-        var users = msg.args[3].trim().split(/ +/);
-        if (channel) {
-            users.forEach(function(user) {
-                // user = "@foo", "+foo", "&@foo", etc...
-                // The symbols are the prefix set.
-                var allowedSymbols = Object.keys(self.modeForPrefix).join("");
-                // Split out the prefix from the nick e.g "@&foo" => ["@&foo", "@&", "foo"]
-                var prefixRegex = new RegExp("^([" + escapeRegExp(allowedSymbols) + "]*)(.*)$");
-                var match = user.match(prefixRegex);
-                if (match) {
-                    var userPrefixes = match[1];
-                    var knownPrefixes = "";
-                    for (var i = 0; i < userPrefixes.length; i++) {
-                        if (userPrefixes[i] in self.modeForPrefix) {
-                            knownPrefixes += userPrefixes[i];
-                        }
-                    }
-                    if (knownPrefixes.length > 0) {
-                        channel.users[match[2]] = knownPrefixes;
-                    }
-                    else {
-                        // recombine just in case this server allows weird chars in the nick.
-                        // We know it isn"t a mode char.
-                        channel.users[match[1] + match[2]] = "";
+        if (!msg.args[IDX_USERS]) {
+            // No users
+            return;
+        }
+        const users = msg.args[IDX_USERS].trim().split(/ +/);
+        users.forEach((user) => {
+            // user = "@foo", "+foo", "&@foo", etc...
+            // The symbols are the prefix set.
+            const allowedSymbols = Object.keys(this.supported.modeForPrefix).join("");
+            // Split out the prefix from the nick e.g "@&foo" => ["@&foo", "@&", "foo"]
+            const prefixRegex = new RegExp("^([" + escapeRegExp(allowedSymbols) + "]*)(.*)$");
+            const match = user.match(prefixRegex);
+            if (match) {
+                const userPrefixes = match[1];
+                let knownPrefixes = "";
+                for (const prefix of userPrefixes) {
+                    if (prefix in this.supported.modeForPrefix) {
+                        knownPrefixes += prefix;
                     }
                 }
-            });
-        }
+                if (knownPrefixes.length > 0) {
+                    channel.users[match[2]] = new Set(knownPrefixes);
+                } else {
+                    // recombine just in case this server allows weird chars in the nick.
+                    // We know it isn't a mode char.
+                    channel.users[match[1] + match[2]] = new Set();
+                }
+            }
+        });
     }
 
     private onTopicReply(msg: IMessage) {
-        IrcUtil.casemap(msg, 1);
-        channel = this.state.chanData(msg.args[1]);
+        IrcUtil.casemap(msg, 1, this.supported);
+        const channel = this.state.chanData(msg.args[1]);
         if (channel) {
             channel.topic = msg.args[2];
         }
     }
 
     private onEndOfNames(msg: IMessage) {
-        IrcUtil.casemap(msg, 1);
-        channel = this.state.chanData(msg.args[1]);
+        IrcUtil.casemap(msg, 1, this.supported);
+        const channel = this.state.chanData(msg.args[1]);
         if (channel) {
-            self.emit("names", msg.args[1], channel.users);
-            self.emit("names" + msg.args[1], channel.users);
-            self.send("MODE", msg.args[1]);
+            this.emit("names", Object.assign(msg, {users: channel.users, channel: msg.args[0]}) as INames);
         }
     }
 
     private onTopicWhoTime(msg: IMessage) {
-        IrcUtil.casemap(msg, 1);
-        channel = this.state.chanData(msg.args[1]);
+        IrcUtil.casemap(msg, 1, this.supported);
+        const channel = this.state.chanData(msg.args[1]);
         if (channel) {
             channel.topicBy = msg.args[2];
             // channel, topic, nick
-            self.emit("topic", msg.args[1], channel.topic, channel.topicBy, message);
+            this.emit("topic", Object.assign(msg, {
+                channel: msg.args[1],
+                topic: channel.topic,
+                topicBy: channel.topicBy,
+            }) as ITopic);
         }
     }
 
     private onTopic(msg: IMessage) {
         // channel, topic, nick
         IrcUtil.casemap(msg, 0, this.supported);
-        self.emit("topic", msg.args[0], msg.args[1], message.nick, message);
-
-        channel = this.state.chanData(msg.args[0]);
+        this.emit("topic", Object.assign(msg, {
+            channel: msg.args[0],
+            topic: msg.args[1],
+            topicBy: msg.nick,
+        }) as ITopic);
+        const channel = this.state.chanData(msg.args[0]);
         if (channel) {
             channel.topic = msg.args[1];
-            channel.topicBy = message.nick;
+            channel.topicBy = msg.nick;
         }
     }
 
@@ -470,16 +483,6 @@ export class MessageParser extends EventEmitter {
         msg.args[1] === "ACK" &&
         msg.args[2] === "sasl ") { // there"s a space after sasl
         self.send("AUTHENTICATE", "PLAIN");
-        }
-    }
-
-    private onAuthenticate(msg: IMessage) {
-        if (msg.args[0] === "+") { self.send("AUTHENTICATE",
-        new Buffer(
-            self.opt.nick + "\0" +
-            self.opt.userName + "\0" +
-            self.opt.password
-        ).toString("base64"));
         }
     }
 
@@ -663,6 +666,9 @@ export class MessageParser extends EventEmitter {
            case "KILL":
                this.onKill(msg);
                break;
+           case "NICK":
+               this.onNick(msg);
+               break;
            case "PRIVMSG":
                this.onPrivMsg(msg);
                break;
@@ -677,10 +683,10 @@ export class MessageParser extends EventEmitter {
                this.onCap(msg);
                break;
            case "AUTHENTICATE":
-               this.onAuthenticate(msg);
+               this.emit("auth", msg.args[0]);
                break;
            case "rpl_saslsuccess":
-               self.send("CAP", "END");
+               this.emit("saslsuccess");
                break;
            case "err_unavailresource":
            // err_unavailresource has been seen in the wild on Freenode when trying to
@@ -699,4 +705,9 @@ export class MessageParser extends EventEmitter {
                break;
        }
     }
+}
+
+// https://developer.mozilla.org/en/docs/Web/JavaScript/Guide/Regular_Expressions
+function escapeRegExp(str: string) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
 }

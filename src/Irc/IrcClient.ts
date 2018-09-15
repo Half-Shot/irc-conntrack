@@ -8,6 +8,7 @@ import { IrcUtil } from "./IrcUtil";
 import { parseMessage, IMessage } from "./IMessage";
 import { MessageParser } from "./MessageParser";
 import { IrcState } from "./IrcState";
+import { INames } from "./Messages/INames";
 
 const DEFAULT_CONNECTION_TIMEOUT_MS = 10000;
 const BUFFER_SIZE = 1024;
@@ -54,7 +55,28 @@ export class IrcClient extends Socket {
         this.msgParser.on("ping", (pingstring: string) => {
             this.send("PONG", pingstring);
         });
-        // TODO: Message parser emits lots of things.
+        this.msgParser.on("names", (names: INames) => {
+            // Get the mode as well.
+            this.send("MODE", names.channel);
+        });
+        this.msgParser.on("saslsuccess", () => {
+            // We are logged in, so finished capabilities.
+            this.send("CAP", "END");
+        });
+        this.msgParser.on("auth", (plus) => {
+            if (plus !== "+") {
+                // Not sure why, but we sure want a +.
+                return;
+            }
+            this.send(
+                "AUTHENTICATE",
+                new Buffer(
+                    this.state.nick + "\0" +
+                    this.ircOpts.username + "\0" +
+                    this.ircOpts.password as string,
+                ).toString("base64")
+            );
+        });
     }
 
     public get motd() {

@@ -14,7 +14,7 @@ export interface IIrcSupported {
 }
 
 interface IChannelLimits {
-    idlength: {[mode: string]: string; };
+    idlength: {[mode: string]: number; };
     length: number;
     limit: {[prefix: string]: number; };
     modes: {[mode: string]: string; };

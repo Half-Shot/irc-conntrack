@@ -64,7 +64,7 @@ describe("IrcClient", () => {
             await client.initiate(MOCK_SERVER);
             await listener.waitForData(1);
             expect(listener.connections).to.equal(1);
-            expect(listener.dataRecieved).to.equal(":CONNECT hello!\n\r\n");
+            expect(listener.dataRecieved).to.equal("NICK myname\r\nUSER foouser 8 * :Mr Foo\r\n");
         });
     });
     describe("onData", () => {

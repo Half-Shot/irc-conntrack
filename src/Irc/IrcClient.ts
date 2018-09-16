@@ -107,7 +107,7 @@ export class IrcClient extends Socket {
     }
 
     /**
-     * Use this to listen for parsed messages from the IRC connection.
+     * Use this to listen for parsed  messages from the IRC connection.
      */
     public get msgEmitter() {
         return this.msgParser;

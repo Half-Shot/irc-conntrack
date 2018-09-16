@@ -4,13 +4,14 @@ import { IrcConnectionOpts } from "../src/Irc/IrcClient";
 
 class MockIrcClient {
     public usermode: string = "usermode";
-    public nickname: string;
-    public state: IrcState;
+    public ircState: IrcState;
+    public msgEmitter = {
+        on: () => { /* stub */ },
+    };
     constructor(public uuid: string, opts: IrcConnectionOpts) {
-        /* stub */
-        this.nickname = opts.nicknames as string;
-        this.state = new IrcState();
-        this.state.usermode = "usermode";
+        this.ircState = new IrcState();
+        this.ircState.usermode = "usermode";
+        this.ircState.nick = opts.nicknames as string;
     }
 
     public on() {

@@ -1,16 +1,3 @@
-import { IMessage } from "./IMessage";
-import { IrcClient } from "./IrcClient";
-import { IrcState, IChannelListItem } from "./IrcState";
-import { Log } from "../Log";
-import { EventEmitter } from "events";
-import { IIrcSupported } from "./IrcSupported";
-import { IrcUtil } from "./IrcUtil";
-import { INotice } from "./Messages/INotice";
-import { IMode } from "./Messages/IMode";
-import { INick } from "./Messages/INick";
-import { INames } from "./Messages/INames";
-import { ITopic } from "./Messages/ITopic";
-
 /**
  * This code is heavily based upon https://github.com/matrix-org/node-irc
  * which is in turn based upon https://github.com/martynsmith/node-irc.
@@ -41,6 +28,25 @@ import { ITopic } from "./Messages/ITopic";
  *   along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { IMessage } from "./IMessage";
+import { IrcClient } from "./IrcClient";
+import { IrcState, IChannelListItem } from "./IrcState";
+import { Log } from "../Log";
+import { EventEmitter } from "events";
+import { IIrcSupported } from "./IrcSupported";
+import { IrcUtil } from "./IrcUtil";
+import { INotice } from "./Messages/INotice";
+import { IMode } from "./Messages/IMode";
+import { INick } from "./Messages/INick";
+import { INames } from "./Messages/INames";
+import { ITopic } from "./Messages/ITopic";
+import { IJoin } from "./Messages/IJoin";
+import { IPart } from "./Messages/IPart";
+import { IKick } from "./Messages/IKick";
+import { IQuit } from "./Messages/IQuit";
+import { IInvite } from "./Messages/IInvite";
+import { ISupports } from "./Messages/ISupports";
+
 /**
  * This class parses IRC messages and emits an event out where possible.
  * It also sets some state for the client to access, but does not have
@@ -49,11 +55,29 @@ import { ITopic } from "./Messages/ITopic";
  * Event Name       | State updated | args
  * ----------       | ------------- | ----
  * registered       | nick hostMask maxLineLength | IMessage
+ * channellist      | N/A | N/A
  * channellist_item | channelList | IChannelListItem
  * nickname_in_use  | N/A | N/A
+ * nickname_unacceptable  | N/A | N/A
+ * mode | channel/user modes updated | IMode
+ * ping | N/A | ping string
+ * pong | N/A | pong string
+ * whois | N/A | IMessage
+ * auth | N/A | plus string
+ * saslsuccess | N/A | N/A
+ * nick | nick | INick
+ * names | N/A | INames
+ * topic | channel.topic | ITopic
+ * mode_is | channel.mode | IMode
+ * join | channel.users | IJoin
+ * part | channel.users | IPart
+ * kick | channel.users | IKick
  * notice           | N/A | INotice
- * mode | N/A | IMode
- * ping | N/A | pingstring
+ * privmsg | N/A | INotice
+ * kill | N/A | IQuit
+ * quit | N/A | IQuit
+ * invite | N/A | IInvite
+ * supports | N/A | ISupports
  */
 
 export class MessageParser extends EventEmitter {
@@ -93,6 +117,7 @@ export class MessageParser extends EventEmitter {
         // neighbors and truncate our messages accordingly.
         const welcomeStringWords = msg.args[1].split(/\s+/);
         const hostMask = welcomeStringWords[welcomeStringWords.length - 1];
+        this.state.hostMask = hostMask;
         this.state.updateMaxLineLength();
         this.emit("registered", msg);
     }
@@ -246,11 +271,6 @@ export class MessageParser extends EventEmitter {
 
     private onNick(msg: IMessage) {
         const newNick = msg.args[0];
-        if (msg.nick === undefined) {
-            this.log.verbose("Couldn't process nick change, 'nick' not given in message?!");
-            // We can't do anything with this.
-            return;
-        }
         if (msg.nick === this.state.nick) {
             // the user just changed their own nick
             this.state.nick = newNick;
@@ -357,156 +377,121 @@ export class MessageParser extends EventEmitter {
     }
 
     private onChannelModeIs(msg: IMessage) {
-        IrcUtil.casemap(msg, 1);
-        channel = this.state.chanData(msg.args[1]);
+        IrcUtil.casemap(msg, 1, this.supported);
+        const channel = this.state.chanData(msg.args[1]);
         if (channel) {
-            channel.mode = msg.args[2];
+            channel.mode = new Set(msg.args[2]);
         }
 
-        self.emit("mode_is", msg.args[1], msg.args[2]);
+        this.emit("mode_is", Object.assign(msg, { mode: msg.args[2], channel: msg.args[1] }) as IMode);
     }
 
     private onJoin(msg: IMessage) {
         IrcUtil.casemap(msg, 0, this.supported);
         // channel, who
-        if (self.nick == message.nick) {
+        if (msg.nick && this.state.nick === msg.nick) {
+            // We joined, so create the channel.
             this.state.chanData(msg.args[0], true);
-        }
-        else {
-            channel = this.state.chanData(msg.args[0]);
-            if (channel && channel.users) {
-                channel.users[message.nick] = "";
+        } else {
+            const channel = this.state.chanData(msg.args[0]);
+            if (msg.nick && channel && channel.users) {
+                channel.users[msg.nick] = new Set();
             }
         }
-        self.emit("join", msg.args[0], message.nick, message);
-        self.emit("join" + msg.args[0], message.nick, message);
-        if (msg.args[0] != msg.args[0].toLowerCase()) {
-            self.emit("join" + msg.args[0].toLowerCase(), message.nick, message);
-        }
+        this.emit("join", Object.assign(msg, {channel: msg.args[0]}) as IJoin);
     }
 
     private onPart(msg: IMessage) {
         IrcUtil.casemap(msg, 0, this.supported);
         // channel, who, reason
-        self.emit("part", msg.args[0], message.nick, msg.args[1], message);
-        self.emit("part" + msg.args[0], message.nick, msg.args[1], message);
-        if (msg.args[0] != msg.args[0].toLowerCase()) {
-            self.emit("part" + msg.args[0].toLowerCase(), message.nick, msg.args[1], message);
+        this.emit("part", Object.assign(msg, {channel: msg.args[0], reason: msg.args[1]}) as IPart);
+        const channel = this.state.chanData(msg.args[0]);
+        if (!channel || !msg.nick) {
+            return;
         }
-        if (self.nick == message.nick) {
-            channel = this.state.chanData(msg.args[0]);
-            delete self.chans[channel.key];
+        if (this.state.nick === msg.nick) {
+            this.state.chans.delete(channel.key);
+            return;
         }
-        else {
-            channel = this.state.chanData(msg.args[0]);
-            if (channel && channel.users) {
-                delete channel.users[message.nick];
-            }
-        }
+        delete channel.users[msg.nick];
     }
 
     private onKick(msg: IMessage) {
         IrcUtil.casemap(msg, 0, this.supported);
         // channel, who, by, reason
-        self.emit("kick", msg.args[0], msg.args[1], message.nick, msg.args[2], message);
-        self.emit("kick" + msg.args[0], msg.args[1], message.nick, msg.args[2], message);
-        if (msg.args[0] != msg.args[0].toLowerCase()) {
-            self.emit("kick" + msg.args[0].toLowerCase(),
-                      msg.args[1], message.nick, msg.args[2], message);
+        const who = msg.args[1];
+        this.emit("kick", Object.assign(msg, {channel: msg.args[0], who, reason: msg.args[2]} as IKick));
+        const channel = this.state.chanData(msg.args[0]);
+        if (!channel || !msg.nick) {
+            return;
         }
 
-        if (self.nick == msg.args[1]) {
-            channel = this.state.chanData(msg.args[0]);
-            delete self.chans[channel.key];
+        if (this.state.nick === who) {
+            this.state.chans.delete(channel.key);
+            return;
         }
-        else {
-            channel = this.state.chanData(msg.args[0]);
-            if (channel && channel.users) {
-                delete channel.users[msg.args[1]];
-            }
-        }
+        delete channel.users[who];
     }
 
     private onPrivMsg(msg: IMessage) {
         IrcUtil.casemap(msg, 0, this.supported);
-        from = message.nick;
-        to = msg.args[0];
-        text = msg.args[1] || "";
-        if (text[0] === "\u0001" && text.lastIndexOf("\u0001") > 0) {
-            self._handleCTCP(from, to, text, "privmsg", message);
-            break;
-        }
-        self.emit("message", from, to, text, message);
-        if (self.supported.channel.types.indexOf(to.charAt(0)) !== -1) {
-            self.emit("message#", from, to, text, message);
-            self.emit("message" + to, from, text, message);
-            if (to != to.toLowerCase()) {
-                self.emit("message" + to.toLowerCase(), from, text, message);
-            }
-        }
-        if (to.toUpperCase() === self.nick.toUpperCase()) self.emit("pm", from, text, message);
-
-        if (self.opt.debug && to == self.nick)
-            util.log("GOT MESSAGE from " + from + ": " + text);
+        const from = msg.nick;
+        const to = msg.args[0];
+        const text = msg.args[1] || "";
+        const isCTCP = (text[0] === "\u0001" && text.lastIndexOf("\u0001") > 0);
+        this.emit("privmsg", {from, to, text, isCTCP} as INotice);
     }
 
     private onKill(msg: IMessage) {
-        nick = msg.args[0];
-        channels = [];
-        Object.keys(self.chans).forEach(function(channame) {
-            var channel = self.chans[channame];
+        const nick = msg.args[0];
+        const channels: string[] = [];
+        this.state.chans.forEach((channel, channame) => {
             if (nick in channel.users) {
                 channels.push(channame);
                 delete channel.users[nick];
             }
         });
-        self.emit("kill", nick, msg.args[1], channels, message);
-    }
 
-    private onKill(msg: IMessage) {
-        if (self.opt.debug)
-                   util.log("QUIT: " + message.prefix + " " + msg.args.join(" "));
-        if (self.nick == message.nick) {
-                   // TODO handle?
-                   break;
-               }
-               // handle other people quitting
-
-        channels = [];
-
-               // finding what channels a user is in?
-        Object.keys(self.chans).forEach(function(channame) {
-                   var channel = self.chans[channame];
-                   if (message.nick in channel.users) {
-                       delete channel.users[message.nick];
-                       channels.push(channame);
-                   }
-               });
-
-               // who, reason, channels
-        self.emit("quit", message.nick, msg.args[0], channels, message);
+        this.emit("kill", Object.assign(msg, {channels, reason: msg.args[1]} as IQuit));
     }
 
     private onInvite(msg: IMessage) {
-        IrcUtil.casemap(msg, 1);
-        from = message.nick;
-        to = msg.args[0];
-        channel = msg.args[1];
-        self.emit("invite", channel, from, message);
+        IrcUtil.casemap(msg, 1, this.supported);
+        this.emit("invite", Object.assign(msg, {to: msg.args[1], channel: msg.args[1]} as IInvite));
+    }
+
+    private onQuit(msg: IMessage) {
+        if (this.state.nick === msg.nick) {
+            // We are quitting? Well let's ignore it since we'll fire a disconnect event somewhere..
+            return;
+        }
+        // handle other people quitting
+
+        const channels: string[] = [];
+
+        // finding what channels a user is in?
+        this.state.chans.forEach( (channel, channame) => {
+            if (msg.nick && msg.nick in channel.users) {
+                delete channel.users[msg.nick];
+                channels.push(channame);
+            }
+        });
+
+        // reason, channels
+        this.emit("quit", Object.assign(msg, {reason: msg.args[1], channels} as IQuit));
     }
 
     private onCap(msg: IMessage) {
         if (msg.args[0] === "*" &&
         msg.args[1] === "ACK" &&
         msg.args[2] === "sasl ") { // there"s a space after sasl
-        self.send("AUTHENTICATE", "PLAIN");
+            this.emit("supports", {supports: "sasl"} as ISupports);
         }
     }
 
     private onErroneusNickname(msg: IMessage) {
-        if (self.opt.showErrors) {
-            util.log("\033[01;31mERROR: " + util.inspect(message) + "\033[0m");
-        }
+        this.log.warn("Nickname flagged as erroneous");
+
         // The Scunthorpe Problem
         // ----------------------
         // Some IRC servers have offensive word filters on nicks. Trying to change your
@@ -518,21 +503,14 @@ export class MessageParser extends EventEmitter {
         // will never be able to connect successfully and the connection will
         // eventually time out, most likely resulting in infinite-reconnects.
         //
-        // Check to see if we are NOT logged in, and if so, use a "random" string
-        // as the next nick.
-        if (self.hostMask !== "") { // hostMask set on rpl_welcome
-            throw new Error(message);
-            break;
+        // Check to see if we are NOT logged in.
+        if (this.state.hostMask !== "") { // hostMask set on rpl_welcome
+            // Just emit an error, and the client will probably ignore
+            throw new Error("Nick was flagged as erroneous");
         }
         // rpl_welcome has not been sent
-        // We can"t use a truly random string because we still need to abide by
-        // the BNF for nicks (first char must be A-Z, length limits, etc). We also
-        // want to be able to debug any issues if people say that they didn"t get
-        // the nick they wanted.
-        let rndNick = "enick_" + Math.floor(Math.random() * 1000) // random 3 digits
-        self.send("NICK", rndNick);
-        self.nick = rndNick;
-        this.state.updateMaxLineLength();
+        // Ask for a new nick.
+        this.emit("nickname_unacceptable", msg);
     }
 
     private handleMessage(msg: IMessage) {

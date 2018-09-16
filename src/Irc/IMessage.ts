@@ -29,7 +29,7 @@ export interface IMessage {
  * @param {Boolean} stripColors If true, strip IRC colors.
  * @return {Object} A parsed message object.
  */
-export function parseMessage(line: string, stripColors: boolean): IMessage {
+export function parseMessage(line: string, stripColors: boolean = true): IMessage {
     const I_NICK = 1;
     const I_USER = 3;
     const I_HOST = 4;

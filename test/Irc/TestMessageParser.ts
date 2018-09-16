@@ -147,7 +147,6 @@ describe("MessageParser", () => {
         it("handle user MODE", (done) => {
             const parser = createMessageParser();
             parser.once("mode", (modeMsg: IMode) => {
-                const chan = state.chans.get("#ircconntest") as IChannel;
                 expect(chan.users.othernick).is.not.undefined;
                 expect(modeMsg.adding).is.true;
                 expect(modeMsg.mode).is.equal("v");

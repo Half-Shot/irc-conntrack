@@ -4,7 +4,7 @@ export interface IChannelListItem {
     topic: string;
 }
 
-interface IChannel {
+export interface IChannel {
     key: string;
     serverName: string;
     users: {[key: string]: Set<string>; };

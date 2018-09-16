@@ -9,6 +9,7 @@ import { parseMessage, IMessage } from "./IMessage";
 import { MessageParser } from "./MessageParser";
 import { IrcState } from "./IrcState";
 import { INames } from "./Messages/INames";
+import { ISupports } from "./Messages/ISupports";
 
 const DEFAULT_CONNECTION_TIMEOUT_MS = 10000;
 const BUFFER_SIZE = 1024;
@@ -52,6 +53,7 @@ export class IrcClient extends Socket {
         this.msgParser = new MessageParser(this.uuid, this.state, this.supported);
         this.msgParser.on("registered", this.onRegistered.bind(this));
         this.msgParser.on("nickname_in_use", this.onNeedNewNick.bind(this));
+        this.msgParser.on("nickname_unacceptable", this.onNeedNewNick.bind(this));
         this.msgParser.on("ping", (pingstring: string) => {
             this.send("PONG", pingstring);
         });
@@ -62,6 +64,11 @@ export class IrcClient extends Socket {
         this.msgParser.on("saslsuccess", () => {
             // We are logged in, so finished capabilities.
             this.send("CAP", "END");
+        });
+        this.msgParser.on("supports", (supports: ISupports) => {
+            if (supports.supports === "sasl") {
+                this.send("AUTHENTICATE", "PLAIN");
+            }
         });
         this.msgParser.on("auth", (plus) => {
             if (plus !== "+") {
@@ -74,7 +81,7 @@ export class IrcClient extends Socket {
                     this.state.nick + "\0" +
                     this.ircOpts.username + "\0" +
                     this.ircOpts.password as string,
-                ).toString("base64")
+                ).toString("base64"),
             );
         });
     }
@@ -84,7 +91,7 @@ export class IrcClient extends Socket {
     }
 
     public get nickname() {
-        return this .state.nick;
+        return this.state.nick;
     }
 
     public get channels() {
@@ -97,6 +104,13 @@ export class IrcClient extends Socket {
 
     public get ircState() {
         return Object.assign({}, this.state);
+    }
+
+    /**
+     * Use this to listen for parsed messages from the IRC connection.
+     */
+    public get msgEmitter() {
+        return this.msgParser;
     }
 
     public initiate(server: ConfigServer): Promise<undefined> {
@@ -155,14 +169,20 @@ export class IrcClient extends Socket {
         });
     }
 
-    public whois(nick?: string): Promise<any> {
+    public async whois(nick?: string): Promise<any> {
         if (nick === undefined) {
             nick = this.state.nick;
             if (nick === undefined) {
                 return Promise.reject("Own nick not known yet");
             }
         }
-        return this.send("whois", nick);
+        const p = new Promise((resolve) => {
+            this.msgParser.on("whois", () => {
+                resolve(this.state.whoisData.get(nick as string));
+            });
+        });
+        await this.send("whois", nick);
+        return p;
     }
 
     // Client.prototype._handleCTCP = function(from, to, text, type, message) {

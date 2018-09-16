@@ -155,7 +155,7 @@ export class MessageParser extends EventEmitter {
                     case "IDCHAN":
                         value.split(",").forEach((val) => {
                             const idChanSet = val.split(":");
-                            this.supported.channel.idlength[idChanSet[0]] = idChanSet[1];
+                            this.supported.channel.idlength[idChanSet[0]] = parseInt(idChanSet[1]);
                         });
                         break;
                     case "KICKLEN":
@@ -194,7 +194,7 @@ export class MessageParser extends EventEmitter {
                             this.supported.maxtargets[targMax[0]] = target;
                         });
                         break;
-                    case "TOPICLEN":
+                    case "TOPI\CLEN":
                         this.supported.topiclength = parseInt(value);
                         break;
                 }
@@ -210,8 +210,9 @@ export class MessageParser extends EventEmitter {
         if (!to) {
             to = null;
         }
-        const text = msg.args[1] || "";
+        let text = msg.args[1] || "";
         if (text[0] === "\u0001" && text.lastIndexOf("\u0001") > 0) {
+            text = text.substr(1, text.length - 2);
             isCTCP = true;
         }
         this.emit("notice", Object.assign(msg, {from, to, text, isCTCP}) as INotice);
@@ -222,12 +223,13 @@ export class MessageParser extends EventEmitter {
         this.log.verbose(`MODE: ${msg.args[0]} sets mode ${msg.args[1]}`);
 
         const channel = this.state.chanData(msg.args[0]);
-        if (!channel)  {
-            return;
-        }
         const modeList = msg.args[1].split("");
         let adding = true;
         const modeArgs = msg.args.slice(2);
+        /**
+         * We will still send the mode even if we don't know the channel, it might
+         * be useful.
+         */
         modeList.forEach((mode) => {
             if (mode === "+") {
                 adding = true;
@@ -243,16 +245,11 @@ export class MessageParser extends EventEmitter {
                 if (!user) {
                     return;
                 }
-                if (adding) {
-                    if (channel.users[user]) {
-                        channel.users[user].add(this.supported.prefixForMode[mode]);
-                    }
-                    return;
+                if (channel && channel.users[user]) {
+                    adding ?  channel.users[user].add(this.supported.prefixForMode[mode]) :
+                              channel.users[user].delete(this.supported.prefixForMode[mode]);
                 }
-                if (channel.users[user]) {
-                    channel.users[user].delete(this.supported.prefixForMode[mode]);
-                }
-                this.emit("mode", Object.assign(msg, {channel: msg.args[0], mode, user, adding} as IMode));
+                this.emit("mode", Object.assign(msg, {channel: msg.args[0], mode, affects: user, adding} as IMode));
                 return;
             }
             let modeArg;
@@ -264,7 +261,9 @@ export class MessageParser extends EventEmitter {
                 }
             }
             // TODO - deal nicely with channel modes that take args
-            adding ? channel.mode.add(mode) : channel.mode.delete(mode);
+            if (channel) {
+                adding ? channel.mode.add(mode) : channel.mode.delete(mode);
+            }
             this.emit("mode", Object.assign(msg, {channel: msg.args[0], mode, arg: modeArg, adding} as IMode));
         });
     }

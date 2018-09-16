@@ -342,7 +342,7 @@ export class MessageParser extends EventEmitter {
         IrcUtil.casemap(msg, 1, this.supported);
         const channel = this.state.chanData(msg.args[1]);
         if (channel) {
-            this.emit("names", Object.assign(msg, {users: channel.users, channel: msg.args[0]}) as INames);
+            this.emit("names", Object.assign(msg, {users: channel.users, channel: msg.args[1]}) as INames);
         }
     }
 

@@ -7,6 +7,7 @@ import { expect } from "chai";
 import { INotice } from "../../src/Irc/Messages/INotice";
 import { IMode } from "../../src/Irc/Messages/IMode";
 import { INick } from "../../src/Irc/Messages/INick";
+import { INames } from "../../src/Irc/Messages/INames";
 
 const RPL_WELCOME_SRC = parseMessage(
     ":example.com 001 Halfyyy :Welcome to the network! Halfyyy!halfy@11.22.111.3\r\n",
@@ -37,6 +38,11 @@ const MODE_CHANNEL_USER_REMOVE = parseMessage(":Halfyyy!someuser@irc.example.com
 const JOIN_CHANNEL = parseMessage(":Halfyyy!someuser@irc.example.com JOIN #ircconntest");
 const NICK = parseMessage(":Halfyyy!someuser@irc.example.com NICK :NewNick");
 const NICK_OTHER = parseMessage(":otherUser!someuser@irc.example.com NICK :NewNick");
+
+const NAMES_START = parseMessage(":example.com 353 Halfa = #ircconntest " +
+                        ":+HalfyyyTwo!someuser@irc.example.com " +
+                        "@Halfa!someuser@irc.example.com");
+const NAMES_END = parseMessage(":example.com 366 Halfa #ircconntest :End of /NAMES list.");
 
 let state: IrcState;
 let supported: IIrcSupported;
@@ -171,7 +177,7 @@ describe("MessageParser", () => {
             parser.actOnMessage(RPL_SUPPORT[1]);
             parser.actOnMessage(MODE_CHANNEL_USER);
         });
-        it("handle user NICK (own nick)", (done) => {
+        it("handle NICK (own)", (done) => {
             const parser = createMessageParser();
             parser.once("nick", (msg: INick) => {
                 expect(msg.newNick, "NewNick");
@@ -183,7 +189,7 @@ describe("MessageParser", () => {
             state.nick = "Halfyyy";
             parser.actOnMessage(NICK);
         });
-        it("handle user NICK (other nick)", (done) => {
+        it("handle NICK (other)", (done) => {
             const parser = createMessageParser();
             parser.once("nick", (msg: INick) => {
                 expect(msg.nick, "otherUser");
@@ -198,6 +204,19 @@ describe("MessageParser", () => {
             const chanB = state.chanData("#chanb", true) as IChannel;
             chanB.users.otherUser = new Set();
             parser.actOnMessage(NICK_OTHER);
+        });
+        it("handle NAMES", (done) => {
+            const parser = createMessageParser();
+            state.chanData("#ircconntest", true) as IChannel;
+            parser.once("names", (msg: INames) => {
+                expect(msg.channel).to.equal("#ircconntest");
+                expect(Object.keys(msg.users)[0]).to.equal("+HalfyyyTwo!someuser@irc.example.com");
+                expect(Object.keys(msg.users)[1]).to.equal("@Halfa!someuser@irc.example.com");
+                expect(Object.keys(msg.users)).to.have.lengthOf(2);
+                done();
+            });
+            parser.actOnMessage(NAMES_START);
+            parser.actOnMessage(NAMES_END);
         });
     });
 });

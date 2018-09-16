@@ -558,6 +558,7 @@ export class MessageParser extends EventEmitter {
                this.onMode(msg);
                break;
            case "NICK":
+               this.onNick(msg);
                break;
            case "rpl_motdstart":
                this.state.appendMotd(msg.args[1] + "\n", true);
@@ -659,9 +660,6 @@ export class MessageParser extends EventEmitter {
                break;
            case "KILL":
                this.onKill(msg);
-               break;
-           case "NICK":
-               this.onNick(msg);
                break;
            case "PRIVMSG":
                this.onPrivMsg(msg);

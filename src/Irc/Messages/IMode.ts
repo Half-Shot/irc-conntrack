@@ -5,7 +5,7 @@ export interface IMode extends IMessage {
     /**
      * If this is undefined, this is a channel mode.
      */
-    user?: string;
+    affects?: string;
     arg?: string;
     mode: string;
     channel: string;

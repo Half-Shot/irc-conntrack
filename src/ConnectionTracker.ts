@@ -64,9 +64,7 @@ export class ConnectionTracker {
                 this.serverClients.set(serverName, clientServerSet);
             }
             clientServerSet.add(uuid);
-            client.on("raw", (msg) => {
-                this.wsHandler.onIrcMessage("raw", uuid, msg);
-            });
+            this.bindListenersForClient(client);
             return uuid;
         });
     }
@@ -87,5 +85,36 @@ export class ConnectionTracker {
         if (cmd.type === "raw") {
             client.send(cmd.content as string);
         }
+    }
+
+    private bindListenersForClient(client: IrcClient) {
+        client.on("raw", (msg) => {
+            this.wsHandler.onIrcMessage("raw", client.uuid, msg);
+        });
+        const emitter = client.msgEmitter;
+        const LISTEN_FOR = [
+            "registered",
+            "channellist",
+            "privmsg",
+            "mode",
+            "whois",
+            "nick",
+            "names",
+            "topic",
+            "mode_is",
+            "join",
+            "part",
+            "kick",
+            "notice",
+            "kill",
+            "quit",
+            "invite",
+            "supports",
+        ];
+        LISTEN_FOR.forEach((eventName) => {
+            emitter.on(eventName, (arg) => {
+                this.wsHandler.onIrcMessage(eventName, client.uuid, arg);
+            });
+        });
     }
 }

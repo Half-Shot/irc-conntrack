@@ -49,8 +49,9 @@ export class IrcState {
         if (ifExists && !this.whoisData.has(nick)) {
             return;
         }
-        const whois = this.whoisData.get(nick) || {nick};
+        const whois = this.whoisData.get(nick) || {};
         whois[key] = value;
+        this.whoisData.set(nick, whois);
     }
 
     public appendMotd(text: string, clear: boolean = false, finished: boolean = false) {

@@ -363,16 +363,16 @@ export class MessageParser extends EventEmitter {
     private onTopic(msg: IMessage) {
         // channel, topic, nick
         IrcUtil.casemap(msg, 0, this.supported);
-        this.emit("topic", Object.assign(msg, {
-            channel: msg.args[0],
-            topic: msg.args[1],
-            topicBy: msg.nick,
-        }) as ITopic);
         const channel = this.state.chanData(msg.args[0]);
         if (channel) {
             channel.topic = msg.args[1];
             channel.topicBy = msg.nick;
         }
+        this.emit("topic", Object.assign(msg, {
+            channel: msg.args[0],
+            topic: msg.args[1],
+            topicBy: msg.nick,
+        }) as ITopic);
     }
 
     private onChannelModeIs(msg: IMessage) {
@@ -387,15 +387,10 @@ export class MessageParser extends EventEmitter {
 
     private onJoin(msg: IMessage) {
         IrcUtil.casemap(msg, 0, this.supported);
-        // channel, who
-        if (msg.nick && this.state.nick === msg.nick) {
-            // We joined, so create the channel.
-            this.state.chanData(msg.args[0], true);
-        } else {
-            const channel = this.state.chanData(msg.args[0]);
-            if (msg.nick && channel && channel.users) {
-                channel.users[msg.nick] = new Set();
-            }
+        const self = Boolean(msg.nick && this.state.nick === msg.nick);
+        const channel = this.state.chanData(msg.args[0], self);
+        if (msg.nick && channel) {
+            channel.users[msg.nick] = new Set();
         }
         this.emit("join", Object.assign(msg, {channel: msg.args[0]}) as IJoin);
     }
@@ -436,8 +431,11 @@ export class MessageParser extends EventEmitter {
         IrcUtil.casemap(msg, 0, this.supported);
         const from = msg.nick;
         const to = msg.args[0];
-        const text = msg.args[1] || "";
+        let text = msg.args[1] || "";
         const isCTCP = (text[0] === "\u0001" && text.lastIndexOf("\u0001") > 0);
+        if (isCTCP) {
+            text = text.substr(1, text.length - 2);
+        }
         this.emit("privmsg", {from, to, text, isCTCP} as INotice);
     }
 
@@ -445,7 +443,7 @@ export class MessageParser extends EventEmitter {
         const nick = msg.args[0];
         const channels: string[] = [];
         this.state.chans.forEach((channel, channame) => {
-            if (nick in channel.users) {
+            if (channel.users[nick]) {
                 channels.push(channame);
                 delete channel.users[nick];
             }
@@ -456,7 +454,7 @@ export class MessageParser extends EventEmitter {
 
     private onInvite(msg: IMessage) {
         IrcUtil.casemap(msg, 1, this.supported);
-        this.emit("invite", Object.assign(msg, {to: msg.args[1], channel: msg.args[1]} as IInvite));
+        this.emit("invite", Object.assign(msg, {to: msg.args[0], channel: msg.args[1]} as IInvite));
     }
 
     private onQuit(msg: IMessage) {
@@ -477,13 +475,13 @@ export class MessageParser extends EventEmitter {
         });
 
         // reason, channels
-        this.emit("quit", Object.assign(msg, {reason: msg.args[1], channels} as IQuit));
+        this.emit("quit", Object.assign(msg, {reason: msg.args[0], channels} as IQuit));
     }
 
     private onCap(msg: IMessage) {
         if (msg.args[0] === "*" &&
         msg.args[1] === "ACK" &&
-        msg.args[2] === "sasl ") { // there"s a space after sasl
+        msg.args[2].trim() === "sasl") { // there"s a space after sasl
             this.emit("supports", {supports: "sasl"} as ISupports);
         }
     }
@@ -515,8 +513,8 @@ export class MessageParser extends EventEmitter {
     private handleMessage(msg: IMessage) {
         // indexes
         const MYINFO_USERMODES = 3;
-        const AWAY = 2;
-        const WHOIS_USER = 2;
+        const AWAY = 0;
+        const WHOIS_AWAY = 2;
         const WHOIS_HOST = 3;
         const WHOIS_REALNAME = 5;
         const WHOIS_IDLE = 2;
@@ -579,9 +577,16 @@ export class MessageParser extends EventEmitter {
            case "rpl_topic":
                this.onTopicReply(msg);
                break;
+           case "AWAY":
+                if (msg.nick === undefined) {
+                    break;
+                }
+                this.state.setWhoisData(msg.nick, "away", msg.args[AWAY], true);
+                break;
+           // Can't find this being used anywhere.
            case "rpl_away":
-               this.state.setWhoisData(msg.args[1], "away", msg.args[AWAY], true);
-               break;
+                this.state.setWhoisData(msg.args[1], "away", msg.args[WHOIS_AWAY], true);
+                break;
            case "rpl_whoisuser":
                this.state.setWhoisData(msg.args[1], "user", msg.args[2]);
                this.state.setWhoisData(msg.args[1], "host", msg.args[WHOIS_HOST]);

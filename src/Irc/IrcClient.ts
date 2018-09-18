@@ -49,7 +49,7 @@ export class IrcClient extends Socket {
         this.dataBufferLength = 0;
         this.state = new IrcState();
         this.state.requestedNickname = Array.isArray(this.ircOpts.nicknames) ?
-            this.ircOpts.nicknames[0] : this.ircOpts.nicknames;
+            this.ircOpts.nicknames.splice(0, 1)[0] : this.ircOpts.nicknames;
         this.msgParser = new MessageParser(this.uuid, this.state, this.supported);
         this.msgParser.on("registered", this.onRegistered.bind(this));
         this.msgParser.on("nickname_in_use", this.onNeedNewNick.bind(this));
@@ -278,8 +278,8 @@ export class IrcClient extends Socket {
             // TODO: Complete this.
             throw new Error("Cannot set nick: NICK_CONFLICT_STRAT_APPEND_NUMBER not implemented.");
         } else { // Defaults to: NICK_CONFLICT_STRAT_NEXT_NICK
-            if (Array.isArray(this.ircOpts.nicknames)) {
-                newNick = this.ircOpts.nicknames.pop();
+            if (Array.isArray(this.ircOpts.nicknames) && this.ircOpts.nicknames.length > 0) {
+                newNick = this.ircOpts.nicknames.splice(0, 1)[0];
             }
         }
         if (!newNick) {

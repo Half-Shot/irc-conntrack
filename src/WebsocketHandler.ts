@@ -14,6 +14,12 @@ export interface IWsCommand {
     content: object|string;
 }
 
+export interface IWsIrcMessage {
+    client_id: string;
+    event: string;
+    msg: IMessage;
+}
+
 export class WebsocketHandler extends EventEmitter {
     private connections: Map<string, Ws>;
 
@@ -29,7 +35,7 @@ export class WebsocketHandler extends EventEmitter {
             this.dropConnection(host);
         }
         this.connections.set(host, connection);
-        if (this.connections.size === this.config.maximumWebsocketConnections) {
+        if (this.connections.size > this.config.maximumWebsocketConnections) {
             log.warn("At connection limit, dropping a connection");
             this.dropConnection(this.connections.keys().next().value);
         }
@@ -50,12 +56,11 @@ export class WebsocketHandler extends EventEmitter {
         this.emit("dropping", host, conn);
         conn.terminate();
         this.emit("dropped", host);
-
     }
 
     public onIrcMessage(event: string, id: string, msg: IMessage) {
         this.connections.forEach((cn) => {
-            cn.send({event, client_id: id, msg});
+            cn.send({event, client_id: id, msg} as IWsIrcMessage);
         });
     }
 
@@ -66,9 +71,14 @@ export class WebsocketHandler extends EventEmitter {
     private onMessage(e: {data: Ws.Data, type: string, target: Ws}) {
         log.verbose(`onMessage type=${e.type} data=${e.data}`);
         try {
-             const cmd = JSON.parse(e.data as string) as IWsCommand;
-             log.info(`Got command type=${cmd.type} id=${cmd.id} client=${cmd.client_id} content=${cmd.content}`);
-             this.emit("command", cmd, e.target);
+             const cmd = JSON.parse(e.data as string) as any;
+             const missingKeys = ["client_id", "id", "type"].filter((key) => typeof(cmd[key]) !== "string");
+             if (missingKeys.length > 0) {
+                throw new Error(`Missing "${missingKeys.join("\",\"")}" from command`);
+             }
+             const wsCmd = cmd as IWsCommand;
+             log.info(`Got command type=${wsCmd.type} id=${wsCmd.id} client=${wsCmd.client_id} content=${wsCmd.content}`);
+             this.emit("command", wsCmd, e.target);
         } catch (e) {
             // Command not understood. Not saying anything.
             log.warn("Failed to execute command:", e);

@@ -76,6 +76,13 @@ const RPL_SUPPORTS_SASL = parseMessage(":irc.example.com CAP * ACK :sasl");
 
 const ERRONEUS_NICK = parseMessage(":irc.example.com 432");
 
+const MOTD_MESSAGES = [
+    "375 HalfyyyTwo :Halfy is a",
+    "372 HalfyyyTwo :very",
+    "372 HalfyyyTwo :very",
+    "376 HalfyyyTwo :good boy!",
+].map((cmd: string) => parseMessage(`:irc.example.com ${cmd}`));
+
 const USELESS_MSGS: IMessage[] = [
     "rpl_yourhost",
     "rpl_created",
@@ -596,6 +603,15 @@ describe("MessageParser", () => {
             });
             WHOIS_LIST.forEach((msg) => {
                 parser.actOnMessage(msg);
+            });
+        });
+        describe("motd", () => {
+            it("will start, append and finish motd", () => {
+                const parser = createMessageParser();
+                MOTD_MESSAGES.forEach((msg) => {
+                    parser.actOnMessage(msg);
+                });
+                expect(state.motd, "Halfy is a\nvery\nvery\ngood dog!");
             });
         });
     });

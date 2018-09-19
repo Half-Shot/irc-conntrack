@@ -164,7 +164,6 @@ describe("IrcClient", () => {
             client.msgEmitter.emit("nickname_in_use");
             expect(client.ircState.nick).to.equal("finalname");
             expect(() => {c.msgEmitter.emit("nickname_in_use"); }).to.throw;
-            console.log(client.ircState);
         });
     });
 });

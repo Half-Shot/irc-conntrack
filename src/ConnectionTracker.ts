@@ -6,6 +6,7 @@ import * as Uuid from "uuid/v4";
 import { IErrorResponse, ERRCODES } from "./Rest/IErrorResponse";
 import { Log } from "./Log";
 import * as Ws from "ws";
+import { IMessage } from "./Irc/IMessage";
 
 const log = new Log("ConnTrack");
 
@@ -88,7 +89,13 @@ export class ConnectionTracker {
     }
 
     private bindListenersForClient(client: IrcClient) {
-        client.on("raw", (msg) => {
+        client.on("end", () => {
+            this.ircClients.delete(client.uuid);
+            this.serverClients.forEach((set) => set.delete(client.uuid));
+            client.msgEmitter.removeAllListeners();
+            client.removeAllListeners();
+        });
+        client.on("raw", (msg: IMessage) => {
             this.wsHandler.onIrcMessage("raw", client.uuid, msg);
         });
         const emitter = client.msgEmitter;

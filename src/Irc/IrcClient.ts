@@ -88,21 +88,6 @@ export class IrcClient extends Socket {
         });
     }
 
-    public get motd() {
-        return this.state.motd;
-    }
-
-    public get nickname() {
-        return this.state.nick;
-    }
-
-    public get channels() {
-        return this.state.channelList;
-    }
-
-    public get usermode() {
-        return this.state.usermode;
-    }
 
     public get ircState() {
         return Object.assign({}, this.state);
@@ -278,7 +263,7 @@ export class IrcClient extends Socket {
     }
 
     private async onRegistered() {
-        await this.whois(this.nickname);
+        await this.whois(this.state.nick);
         // TODO: Need to update nick, hostname and maxlinelength with this.
     }
 

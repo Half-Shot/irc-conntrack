@@ -18,6 +18,8 @@ const LINE_DELIMITER = new RegExp("\r\n|\r|\n");
 const NICK_CONFLICT_STRAT_NEXT_NICK = 0;
 const NICK_CONFLICT_STRAT_APPEND_NUMBER = 1;
 
+const QUIT_MSG = "irc-conntrack invoked quit";
+
 export interface IrcConnectionOpts {
     nicknames: string | string[];
     realname: string;
@@ -153,6 +155,13 @@ export class IrcClient extends Socket {
         });
     }
 
+    public async disconnect(message: string = QUIT_MSG): Promise<void> {
+        //TODO: Check if we are connected.
+        await this.send("QUIT", message);
+        this.requestedDisconnect = true;
+        this.end();
+    };
+
     public send(...args: string[]): Promise<void> {
         if (this.requestedDisconnect) {
             return Promise.resolve();
@@ -260,6 +269,7 @@ export class IrcClient extends Socket {
                     this.msgParser.actOnMessage(message);
                 } catch (err) {
                     if (!this.ircOpts.ignoreBadMessages && !this.requestedDisconnect) {
+                        this.disconnect("Encountered an error");
                         throw err;
                     }
                 }
@@ -272,7 +282,7 @@ export class IrcClient extends Socket {
         // TODO: Need to update nick, hostname and maxlinelength with this.
     }
 
-    private onNeedNewNick() {
+    private async onNeedNewNick() {
         let newNick;
         if (this.ircOpts.nicknameConflictStrategy === NICK_CONFLICT_STRAT_APPEND_NUMBER) {
             // TODO: Complete this.
@@ -283,7 +293,9 @@ export class IrcClient extends Socket {
             }
         }
         if (!newNick) {
-            throw new Error("Cannot set nick: no more nicknames to try");
+            this.log.error("Nickname was rejected and we have no more nicknames to try. Killing client");
+            await this.disconnect("Nickname(s) taken");
+            throw new Error("No more nicknames to try, killing client");
         }
         this.state.requestedNickname = newNick;
         this.send("NICK", this.state.requestedNickname);

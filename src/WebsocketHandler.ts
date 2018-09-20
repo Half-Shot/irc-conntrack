@@ -77,7 +77,10 @@ export class WebsocketHandler extends EventEmitter {
                 throw new Error(`Missing "${missingKeys.join("\",\"")}" from command`);
              }
              const wsCmd = cmd as IWsCommand;
-             log.info(`Got command type=${wsCmd.type} id=${wsCmd.id} client=${wsCmd.client_id} content=${wsCmd.content}`);
+             log.info(
+                 `Got command type=${wsCmd.type} id=${wsCmd.id}` +
+                      `client=${wsCmd.client_id} content=${wsCmd.content}`,
+             );
              this.emit("command", wsCmd, e.target);
         } catch (e) {
             // Command not understood. Not saying anything.

@@ -62,16 +62,11 @@ describe("IrcClient", () => {
             try {
                 await listener.spinUp();
                 client = createClient();
-                console.log("A");
                 await client.initiate(MOCK_SERVER);
-                console.log("B");
                 await listener.waitForData(1);
-                console.log("C");
             } catch (e) {
                 /* NOTE: This sometimes fails and I'm trying to work out why. */
-                console.error("ERROR:", e);
-                console.trace();
-                throw e; 
+                throw e;
             }
             expect(listener.connections).to.equal(1);
             expect(listener.dataRecieved).to.equal("NICK myname\r\nUSER foouser 8 * :Mr Foo\r\n");

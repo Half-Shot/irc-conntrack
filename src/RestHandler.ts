@@ -92,8 +92,7 @@ export class RestHandler {
         }).catch((err: Error) => {
             res.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
             res.send(err);
-        })
-        throw Error("Not implemented yet");
+        });
     }
 
     private openWebsocket(ws: Ws, req: Request) {

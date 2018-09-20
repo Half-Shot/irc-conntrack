@@ -67,8 +67,9 @@ describe("WebsockerHandler", () => {
     });
     describe("onIrcMessage", () => {
         it("will broadcast to all open connctions", () => {
+            const EXPECTED_LEN = 5;
             const msgs: IWsIrcMessage[] = [];
-            const conn = {send:(msg: IWsIrcMessage) => msgs.push(msg)};
+            const conn = {send: (msg: IWsIrcMessage) => msgs.push(msg)};
             const handler = createWebsocketHandler();
             handler.addConnection("host#1", conn as any);
             handler.addConnection("host#2", conn as any);
@@ -76,11 +77,11 @@ describe("WebsockerHandler", () => {
             handler.addConnection("host#4", conn as any);
             handler.addConnection("host#5", conn as any);
             handler.onIrcMessage("raw", "0000-1111", {rawCommand: "hot"} as any);
-            expect(msgs).to.have.lengthOf(5);
+            expect(msgs).to.have.lengthOf(EXPECTED_LEN);
             msgs.forEach((msg) =>  {
-                expect(msg.msg.rawCommand).to.equal("hot")
-                expect(msg.event).to.equal("raw")
-                expect(msg.client_id).to.equal("0000-1111")
+                expect(msg.msg.rawCommand).to.equal("hot");
+                expect(msg.event).to.equal("raw");
+                expect(msg.client_id).to.equal("0000-1111");
             });
         });
     });
@@ -118,7 +119,7 @@ describe("WebsockerHandler", () => {
                 {client_id: "0000-1111", type: true, content: "hi", id: "42"},
                 {client_id: "0000-1111", type: "raw", content: undefined, id: "42"},
                 {client_id: "0000-1111", type: "raw", content: "hi", id: 5},
-                {client_id: undefined, type: "raw", content: "hi", id: 5}
+                {client_id: undefined, type: "raw", content: "hi", id: 5},
             ].forEach((msg) => conn.onmessage({data: JSON.stringify(msg), type: "", target: null}));
         });
     });

@@ -2,7 +2,6 @@ import { Socket, SocketConnectOpts, SocketConstructorOpts } from "net";
 import { ConfigServer } from "../Config";
 import { Log } from "../Log";
 import { TcpSocketConnectOpts } from "net";
-import { ERRCODES, IErrorResponse} from "../Rest/IErrorResponse";
 import { IIrcSupported, getDefaultSupported } from "./IrcSupported";
 import { IrcUtil } from "./IrcUtil";
 import { parseMessage, IMessage } from "./IMessage";
@@ -88,7 +87,6 @@ export class IrcClient extends Socket {
         });
     }
 
-
     public get ircState() {
         return Object.assign({}, this.state);
     }
@@ -141,11 +139,11 @@ export class IrcClient extends Socket {
     }
 
     public async disconnect(message: string = QUIT_MSG): Promise<void> {
-        //TODO: Check if we are connected.
+        // TODO: Check if we are connected.
         await this.send("QUIT", message);
         this.requestedDisconnect = true;
         this.end();
-    };
+    }
 
     public send(...args: string[]): Promise<void> {
         if (this.requestedDisconnect) {

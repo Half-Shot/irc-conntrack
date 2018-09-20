@@ -57,7 +57,13 @@ export class RestHandler {
     }
 
     private getConnection(req: Request, res: Response) {
-        throw Error("Not implemented yet");
+        // NOTE: This always returns "state" for detail.
+        const conn = this.connTracker.getConnectionsForServer(
+            req.params.server,
+            undefined,
+            req.params.id,
+        );
+        res.send(conn[0] as IConnectionState);
     }
 
     private openConnection(req: Request, res: Response) {

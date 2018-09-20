@@ -8,7 +8,7 @@ import { Config } from "./Config";
 import { IErrorResponse, ERRCODES } from "./Rest/IErrorResponse";
 import { WebsocketHandler } from "./WebsocketHandler";
 import { Log } from "./Log";
-import { IConnectionsResponse } from "./Rest/IConnectionsResponse";
+import {IConnectionsResponse, IConnectionState} from "./Rest/IConnectionsResponse";
 import { IOpenResponse } from "./Rest/IOpenResponse";
 import { IrcConnectionOpts } from "./Irc/IrcClient";
 import * as HttpStatus from "http-status-codes";
@@ -81,6 +81,18 @@ export class RestHandler {
     }
 
     private disconnectConnection(req: Request, res: Response) {
+        const msg = req.query.reason || "remotely disconnected client";
+        const client = this.connTracker.getClient(req.params.server, req.params.id);
+        if (!client) {
+            res.send({errcode: ERRCODES.clientNotFound, error: "Could not find client"} as IErrorResponse);
+            return;
+        }
+        client.disconnect(msg).then(() => {
+            res.send({});
+        }).catch((err: Error) => {
+            res.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+            res.send(err);
+        })
         throw Error("Not implemented yet");
     }
 

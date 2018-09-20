@@ -20,20 +20,34 @@ export class ConnectionTracker {
         wsHandler.on("command", this.runCommand.bind(this));
     }
 
-    public getConnectionsForServer(serverName: string, detail: string): IConnectionState[] | string[] {
-        if (!["ids", "state"].includes(detail)) {
     public getClient(serverName: string, id: string): IrcClient|undefined {
         return this.ircClients.get(id);
     }
+
+    public getConnectionsForServer(serverName: string, detail?: string, id?: string): IConnectionState[] | string[] {
+        if (id !== undefined) {
+            detail = "state";
+        }
+        if (detail === undefined || !["ids", "state"].includes(detail)) {
             throw new Error("Unknown value for 'detail' flag");
         }
         log.verbose(`Fetching connections for ${serverName}`);
         if (!this.serverClients.has(serverName)) {
             return [];
         }
-        const clients = [...this.ircClients.values()].filter((client) => {
-            return (this.serverClients.get(serverName) as Set<string>).has(client.uuid);
-        });
+        let clients;
+        if (!id) {
+            clients = [...this.ircClients.values()].filter((client) => {
+                return (this.serverClients.get(serverName) as Set<string>).has(client.uuid);
+            });
+        } else {
+            const serverSet = this.serverClients.get(serverName) as Set<string>;
+            if (!this.ircClients.has(id) || !serverSet.has(id)) {
+                throw new Error("Cannot find connection for specified server.");
+            }
+            clients = [this.ircClients.get(id) as IrcClient];
+        }
+
         if (detail === "ids") {
             return clients.map((client) => client.uuid);
         } // state

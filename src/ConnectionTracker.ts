@@ -22,6 +22,9 @@ export class ConnectionTracker {
 
     public getConnectionsForServer(serverName: string, detail: string): IConnectionState[] | string[] {
         if (!["ids", "state"].includes(detail)) {
+    public getClient(serverName: string, id: string): IrcClient|undefined {
+        return this.ircClients.get(id);
+    }
             throw new Error("Unknown value for 'detail' flag");
         }
         log.verbose(`Fetching connections for ${serverName}`);

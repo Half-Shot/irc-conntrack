@@ -94,8 +94,85 @@ describe("RestHandler", () => {
             expect(listenOpts.backlog).to.be.equal(2);
         });
     });
+    describe("disconnectConnection", () => {
+        it("should disconnect client", (done) => {
+            let calledDisconnect = false;
+            const c = createRestHandler({}, {
+                getClient: () => {
+                    return {
+                        disconnect: (msg: string) => {
+                            calledDisconnect = true;
+                            return Promise.resolve();
+                        },
+                    };
+                },
+            });
+            c.configure();
+            callbacks["post:/_irc/connections/:server/:id/disconnect"]({
+                query: { },
+                params: {
+                    server: "mockserver",
+                    id: "0000-1111",
+                },
+            }, {
+                send: () => {
+                    done();
+                },
+            });
+        });
+        it("should report missing clients", (done) => {
+            const c = createRestHandler({}, {
+                getClient: () => {
+                    return;
+                },
+            });
+            c.configure();
+            const res = {
+                statusCode: -1,
+                send: (err: IErrorResponse) => {
+                    expect(err.errcode).to.equal(ERRCODES.clientNotFound);
+                    expect(res.statusCode).to.equal(HttpStatus.NOT_FOUND);
+                    done();
+                },
+            };
+            callbacks["post:/_irc/connections/:server/:id/disconnect"]({
+                query: { },
+                params: {
+                    server: "mockserver",
+                    id: "0000-1111",
+                },
+            }, res);
+        });
+        it("should report failures to disconnect", (done) => {
+            const c = createRestHandler({}, {
+                getClient: () => {
+                    return {
+                        disconnect: (msg: string) => {
+                            return Promise.reject("It went wrong");
+                        },
+                    };
+                },
+            });
+            c.configure();
+            const res = {
+                statusCode: -1,
+                send: (err: IErrorResponse) => {
+                    expect(err.errcode).to.equal(ERRCODES.genericFail);
+                    expect(res.statusCode).to.equal(HttpStatus.INTERNAL_SERVER_ERROR);
+                    done();
+                },
+            };
+            callbacks["post:/_irc/connections/:server/:id/disconnect"]({
+                query: { },
+                params: {
+                    server: "mockserver",
+                    id: "0000-1111",
+                },
+            }, res);
+        });
+    });
     describe("getConnections", () => {
-        it("should get ids if no detail given", () => {
+        it("should get ids if no detail given", (done) => {
             const c = createRestHandler({}, {
                 getConnectionsForServer: (server: string, detail: string) => {
                     expect(server).to.be.equal("mockserver");
@@ -112,10 +189,11 @@ describe("RestHandler", () => {
             }, {
                 send: (res: IConnectionsResponse) => {
                     expect(res.connections).to.have.lengthOf(2);
+                    done();
                 },
             });
         });
-        it("should get state if detail given", () => {
+        it("should get state if detail given", (done) => {
             const c = createRestHandler({}, {
                 getConnectionsForServer: (server: string, detail: string) => {
                     expect(server).to.be.equal("mockserver");
@@ -132,6 +210,7 @@ describe("RestHandler", () => {
             }, {
                 send: (res: IConnectionsResponse) => {
                     expect(res.connections).to.have.lengthOf(2);
+                    done();
                 },
             });
         });

@@ -42,9 +42,11 @@ import { IrcState } from "../src/Irc/IrcState";
 let wsHooks: any = {};
 let config: Config;
 let lastSentMessage: string;
+const clientUuids: Set<string> = new Set();
 
 const createConnectionTracker = async (createClients: number = 0) => {
     wsHooks = {};
+    clientUuids.clear();
     config = Config.parseFile("./test/config.sample.yaml");
     const t = new ConnectionTracker(
         config,
@@ -55,7 +57,7 @@ const createConnectionTracker = async (createClients: number = 0) => {
         } as any,
     );
     for (let i = 0; i < createClients; i++) {
-        await t.openConnection("foo", {
+        const uuid = await t.openConnection("foo", {
             nicknames: `GoodDog#${i}`,
             username: "",
             realname: "",
@@ -65,6 +67,7 @@ const createConnectionTracker = async (createClients: number = 0) => {
             stripColors: false,
             ignoreBadMessages: false,
         });
+        clientUuids.add(uuid);
     }
     return t;
 };
@@ -99,6 +102,17 @@ describe("ConnectionTracker", () => {
         it("should throw if detail is not supported", async () => {
             const t = await createConnectionTracker();
             expect(() => {t.getConnectionsForServer("foo", "invaliddetail"); }).to.throw();
+        });
+        it("should get a single client if uuid given", async () => {
+            const t = await createConnectionTracker(1);
+            const uuid = clientUuids.values().next().value;
+            const connections = t.getConnectionsForServer("foo", undefined, uuid);
+            expect(connections).to.have.lengthOf(1);
+        });
+        it("should return no client's if uuid not found", async () => {
+            const t = await createConnectionTracker(1);
+            const connections = t.getConnectionsForServer("foo", undefined, "fake-uuid");
+            expect(connections).to.have.lengthOf(0);
         });
     });
     describe("openConnection", () => {
@@ -182,6 +196,18 @@ describe("ConnectionTracker", () => {
                 expect(lastSentMessage).to.equal("aaaa");
                 resolve();
             });
+        });
+    });
+    describe("getClient", () => {
+        it("should get", async () => {
+            const t = await createConnectionTracker(1);
+            expect(t.getClient("foo", clientUuids.values().next().value)).to.not.be.undefined;
+
+        });
+        it("should return undefined", async () => {
+
+            const t = await createConnectionTracker(0);
+            expect(t.getClient("foo", "foooobar")).to.be.undefined;
         });
     });
 });

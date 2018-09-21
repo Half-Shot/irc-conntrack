@@ -43,7 +43,7 @@ export class ConnectionTracker {
         } else {
             const serverSet = this.serverClients.get(serverName) as Set<string>;
             if (!this.ircClients.has(id) || !serverSet.has(id)) {
-                throw new Error("Cannot find connection for specified server.");
+                return [];
             }
             clients = [this.ircClients.get(id) as IrcClient];
         }

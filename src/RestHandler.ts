@@ -36,7 +36,7 @@ export class RestHandler {
         this.app.get("/_irc/connections/:server", this.getConnections.bind(this));
         this.app.get("/_irc/connections/:server/:id", this.getConnection.bind(this));
         this.app.post("/_irc/connections/:server/open", this.openConnection.bind(this));
-        this.app.post("/_irc/connections/:server/disconnect", this.disconnectConnection.bind(this));
+        this.app.post("/_irc/connections/:server/:id/disconnect", this.disconnectConnection.bind(this));
         this.app.ws("/_irc/ws", this.openWebsocket.bind(this));
         this.app.get("/_irc/config", this.readConfig.bind(this));
         this.app.post("/_irc/config", this.updateConfig.bind(this));
@@ -53,6 +53,13 @@ export class RestHandler {
     private getConnections(req: Request, res: Response) {
         const detail = req.query.detail || "ids";
         const conns = this.connTracker.getConnectionsForServer(req.params.server, detail);
+        if (conns.length === 0) {
+            res.statusCode = HttpStatus.NOT_FOUND;
+            res.send({
+                errcode: ERRCODES.clientNotFound,
+                error: "No clients found",
+            } as IErrorResponse);
+        }
         res.send({connections: conns} as IConnectionsResponse);
     }
 
@@ -63,6 +70,13 @@ export class RestHandler {
             undefined,
             req.params.id,
         );
+        if (conn.length === 0) {
+            res.statusCode = HttpStatus.NOT_FOUND;
+            res.send({
+                errcode: ERRCODES.clientNotFound,
+                error: "No clients found",
+            } as IErrorResponse);
+        }
         res.send(conn[0] as IConnectionState);
     }
 
@@ -84,14 +98,15 @@ export class RestHandler {
         const msg = req.query.reason || "remotely disconnected client";
         const client = this.connTracker.getClient(req.params.server, req.params.id);
         if (!client) {
+            res.statusCode = HttpStatus.NOT_FOUND;
             res.send({errcode: ERRCODES.clientNotFound, error: "Could not find client"} as IErrorResponse);
             return;
         }
         client.disconnect(msg).then(() => {
             res.send({});
-        }).catch((err: Error) => {
+        }).catch((error: Error) => {
             res.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
-            res.send(err);
+            res.send({errcode: ERRCODES.genericFail, error: error.message} as IErrorResponse);
         });
     }
 

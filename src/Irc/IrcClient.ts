@@ -178,6 +178,29 @@ export class IrcClient extends Socket {
         this.end();
     }
 
+    /**
+     * Send a whois request for the given nick. This will await
+     * the 'whois' event and return whois data for the nick.
+     * @param nick The nick to check, or our nick if undefined.
+     */
+    public async whois(nick?: string): Promise<any> {
+        if (nick === undefined) {
+            nick = this.state.nick;
+            if (nick === undefined) {
+                return Promise.reject("Own nick not known yet");
+            }
+        }
+        const p = new Promise((resolve, reject) => {
+            this.msgParser.on("whois", () => {
+                resolve(this.state.whoisData.get(nick as string));
+            });
+            this.once(`action_error:${nick}`, (err: IError) => {
+                reject(err.error);
+            });
+        });
+        await this.send("whois", nick);
+        return p;
+    }
     public send(...args: string[]): Promise<void> {
         if (this.requestedDisconnect) {
             return Promise.resolve();

@@ -10,6 +10,7 @@ import { IrcState } from "./IrcState";
 import { INames } from "./Messages/INames";
 import { ISupports } from "./Messages/ISupports";
 import {IJoin} from "./Messages/IJoin";
+import {IError} from "./Messages/IError";
 import {IPart} from "./Messages/IPart";
 
 const DEFAULT_CONNECTION_TIMEOUT_MS = 10000;
@@ -250,6 +251,36 @@ export class IrcClient extends Socket {
         await this.send("PART", channel);
         return p;
     }
+
+    /**
+     * Send some action (/me emote) text to the given channel.
+     * @param channel
+     * @param text
+     */
+    public async action(channel: string, text: string): Promise<void> {
+        if (typeof text !== "undefined") {
+            return Promise.all(text.toString().split(/\r?\n/).filter((line) => {
+                return line.length > 0;
+            }).map((line) => {
+                return this.say(channel, "\u0001ACTION " + line + "\u0001");
+            })).then(() => {/* Hack to make void[] -> void */});
+        }
+    }
+
+
+    public say(target: string, text: string): Promise<void> {
+        return this.speak("PRIVMSG", target, text);
+    }
+
+    public notice(target: string, text: string): Promise<void> {
+        return this.speak("NOTICE", target, text);
+    }
+
+    /**
+     * Send a raw command.
+     * NOTE: This will no-op if a disconnect has been requested.
+     * @param args A command and it's args.
+     */
     public send(...args: string[]): Promise<void> {
         if (this.requestedDisconnect) {
             return Promise.resolve();
@@ -266,20 +297,11 @@ export class IrcClient extends Socket {
         });
     }
 
-    public async whois(nick?: string): Promise<any> {
-        if (nick === undefined) {
-            nick = this.state.nick;
-            if (nick === undefined) {
-                return Promise.reject("Own nick not known yet");
-            }
-        }
-        const p = new Promise((resolve) => {
-            this.msgParser.on("whois", () => {
-                resolve(this.state.whoisData.get(nick as string));
-            });
-        });
-        await this.send("whois", nick);
-        return p;
+    private speak(kind: string , target: string, text: string): Promise<void> {
+        const linesToSend = IrcUtil.splitMessage(target, text, this.state.maxLineLength);
+        return Promise.all(linesToSend.map((toSend) => {
+            return this.send(kind, target, toSend);
+        })).then(() => {/* Hack to make void[] -> void */});
     }
 
     // Client.prototype._handleCTCP = function(from, to, text, type, message) {
@@ -295,6 +317,7 @@ export class IrcClient extends Socket {
     //     if (parts[0] === 'PING' && type === 'privmsg' && parts.length > 1)
     //         this.ctcp(from, 'notice', text);
     // };
+
 
     private onConnected(): Promise<void> {
         // TODO: Webirc support.

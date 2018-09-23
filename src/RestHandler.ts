@@ -188,8 +188,11 @@ export class RestHandler {
 
     private logRequest(req: Request, res: Response, next: NextFunction) {
         const body = req.body === undefined ? "" : req.body;
+        const query = Object.assign({}, req.query);
+        delete query.access_token;
         logHttp.verbose(`${req.hostname}:${req.connection.remotePort} ${req.method} ` +
-                        `${req.path} ${JSON.stringify(req.query)} ${req.method === "GET" ? body : ""}`);
+                        `${req.path} ${JSON.stringify(query)}` +
+                        `${["GET", "POST"].includes(req.method) ? JSON.stringify(body) : ""}`);
         next();
     }
 }

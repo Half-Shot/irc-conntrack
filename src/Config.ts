@@ -180,6 +180,6 @@ export class ConfigLogging {
     }
 
     public get console(): string {
-        return "verbose";
+        return "silly";
     }
 }

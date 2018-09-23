@@ -1,5 +1,5 @@
 import { Config } from "./Config";
-import { WebsocketHandler, IWsCommand } from "./WebsocketHandler";
+import { WebsocketHandler } from "./WebsocketHandler";
 import { IConnectionState } from "./Rest/IConnectionsResponse";
 import { IrcClient, IrcConnectionOpts } from "./Irc/IrcClient";
 import * as Uuid from "uuid/v4";
@@ -7,6 +7,7 @@ import { IErrorResponse, ERRCODES } from "./Rest/IErrorResponse";
 import { Log } from "./Log";
 import * as Ws from "ws";
 import { IMessage } from "./Irc/IMessage";
+import {IWsCommand, IWsContentJoinPart, IWsContentSay} from "./WebsocketCommands";
 
 const log = new Log("ConnTrack");
 

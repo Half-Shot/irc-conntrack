@@ -1,8 +1,9 @@
 import { expect } from "chai";
 import * as Mock from "mock-require";
-import { WebsocketHandler, IWsIrcMessage, IWsCommand } from "../src/WebsocketHandler";
+import { WebsocketHandler, IWsIrcMessage } from "../src/WebsocketHandler";
 import { Config } from "../src/Config";
 import { fail } from "assert";
+import {IWsCommand} from "../src/WebsocketCommands";
 
 let config: Config;
 

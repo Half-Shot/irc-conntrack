@@ -2,17 +2,10 @@ import { Config } from "./Config";
 import * as Ws from "ws";
 import { Log } from "./Log";
 import { EventEmitter } from "events";
-import { ConnectionTracker } from "./ConnectionTracker";
 import { IMessage } from "./Irc/IMessage";
+import {IWsCommand} from "./WebsocketCommands";
 
 const log = new Log("WebsocketHandler");
-
-export interface IWsCommand {
-    client_id: string;
-    id: string;
-    type: string; // ["raw","join"]
-    content: object|string;
-}
 
 export interface IWsIrcMessage {
     client_id: string;

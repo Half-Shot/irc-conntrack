@@ -46,6 +46,7 @@ import { IKick } from "./Messages/IKick";
 import { IQuit } from "./Messages/IQuit";
 import { IInvite } from "./Messages/IInvite";
 import { ISupports } from "./Messages/ISupports";
+import {IError} from "./Messages/IError";
 
 /**
  * This class parses IRC messages and emits an event out where possible.
@@ -389,10 +390,13 @@ export class MessageParser extends EventEmitter {
         IrcUtil.casemap(msg, 0, this.supported);
         const self = Boolean(msg.nick && this.state.nick === msg.nick);
         const channel = this.state.chanData(msg.args[0], self);
+        const arg: IJoin = Object.assign(msg, {channel: msg.args[0]});
         if (msg.nick && channel) {
             channel.users[msg.nick] = new Set();
+            this.emit(`join${channel.key}`, arg);
+
         }
-        this.emit("join", Object.assign(msg, {channel: msg.args[0]}) as IJoin);
+        this.emit("join", arg);
     }
 
     private onPart(msg: IMessage) {
@@ -693,10 +697,32 @@ export class MessageParser extends EventEmitter {
            case "err_erroneusnickname":
                this.onErroneusNickname(msg);
                break;
+           /* These errors are usually a consequence of a user action and should be treated
+              a bit differently. We emit a special error object with a key so the promise
+              can be reject sensibly.*/
+           case "err_nosuchnick":
+           case "err_nosuchserver":
+           case "err_nosuchchannel":
+           case "err_nonicknamegiven":
+           case "err_norecipient":
+           case "err_toomanychannels":
+           case "err_cannotsendtochan":
+           case "err_usernotinchannel":
+               const target = msg.args[1];
+               this.emit(`action_error`, {
+                   target,
+                   error: msg.args[2],
+               } as IError);
+
+               this.emit(`action_error:${target}`, {
+                   target,
+                   error: msg.args[2],
+               } as IError);
+               break;
            default:
                if (msg.commandType === "error") {
                    this.log.warn(`Error on ${msg.command} ${msg.rawCommand}`);
-                   throw new Error("Error on message: ${msg.command} ${msg.rawCommand}");
+                   this.emit("error", msg);
                }
                this.log.verbose(`Unhandled ${msg.command} ${msg.rawCommand}`);
                return false;

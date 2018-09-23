@@ -174,16 +174,16 @@ export class RestHandler {
             return;
         }
 
-        if (this.config.accessToken === token) {
-            next();
-        } else {
+        if (this.config.accessToken !== token) {
             logHttp.warn("rejecting because token was invalid");
             res.statusCode = HttpStatus.UNAUTHORIZED;
             res.send({
                 errcode: ERRCODES.badToken,
                 error: "Token was invalid",
             } as IErrorResponse);
+            return;
         }
+        next();
     }
 
     private logRequest(req: Request, res: Response, next: NextFunction) {

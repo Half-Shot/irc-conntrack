@@ -69,7 +69,7 @@ export class WebsocketHandler extends EventEmitter {
 
     public onIrcMessage(event: string, id: string, msg: IMessage) {
         this.connections.forEach((cn) => {
-            cn.send({event, client_id: id, msg} as IWsIrcMessage);
+            cn.send(JSON.stringify({event, client_id: id, msg} as IWsIrcMessage));
         });
     }
 
@@ -88,7 +88,7 @@ export class WebsocketHandler extends EventEmitter {
              const wsCmd = cmd as IWsCommand;
              log.info(
                  `Got command type=${wsCmd.type} id=${wsCmd.id}` +
-                      `client=${wsCmd.client_id} content=${wsCmd.content}`,
+                      `client=${wsCmd.client_id} content=${JSON.stringify(wsCmd.content)}`,
              );
              this.emit("command", wsCmd, e.target);
         } catch (e) {

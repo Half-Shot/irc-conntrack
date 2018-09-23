@@ -241,6 +241,7 @@ export class IrcClient extends Socket {
                 DELIMITER.charCodeAt(1),
             ]));
         }
+        this.log.silly(`RXPART:${chunk.toString()}`);
         this.dataBufferLength += chunk.length;
         if (this.dataBufferLength > BUFFER_SIZE) {
             this.dataBuffer.fill(0, 0);
@@ -256,24 +257,33 @@ export class IrcClient extends Socket {
         ).toString().split(LINE_DELIMITER);
         // Clear the buffer
         this.dataBuffer.fill(0, 0);
-        this.log.silly(`RX:"${lines.join()}"`);
+        this.dataBufferLength = 0;
         lines.forEach((line) => {
-            if (line.length) {
-                try {
-                    const message = parseMessage(line, this.ircOpts.stripColors);
-                    this.emit("raw", message);
-                    if (message.badFormat) {
-                        throw new Error("Bad format");
-                    }
-                    this.msgParser.actOnMessage(message);
-                } catch (err) {
-                    if (!this.ircOpts.ignoreBadMessages && !this.requestedDisconnect) {
-                        this.disconnect("Encountered an error");
-                        throw err;
-                    }
-                }
+            if (!line.trim().length) {
+                return;
             }
+            this.onLine(line);
         });
+    }
+
+    private onLine(line: string) {
+        this.log.silly(`RX:"${line}"`);
+        let msg: IMessage;
+        try {
+            msg = parseMessage(line, this.ircOpts.stripColors);
+            if (msg.badFormat) {
+                this.emit("error", new Error("Message was badly formatted"));
+            }
+            // We only emit raw if it's not been emitted via a dedicated event.
+            if (!this.msgParser.actOnMessage(msg)) {
+                this.emit("raw", msg);
+            }
+        } catch (err) {
+            if (!this.ircOpts.ignoreBadMessages && !this.requestedDisconnect) {
+                this.disconnect("Encountered an error");
+                return;
+            }
+        }
     }
 
     private async onRegistered() {

@@ -52,4 +52,55 @@ export class IrcUtil {
         }
         return lower;
     }
+
+    public static splitLongLines(words: string, maxLength: number, destination: string[]): string[] {
+        if (words.length === 0) {
+            return destination;
+        }
+        if (words.length <= maxLength) {
+            destination.push(words);
+            return destination;
+        }
+        let c: string = words[maxLength];
+        let cutPos: number = 0;
+        let wsLength = 1;
+        if (c.match(/\s/)) {
+            cutPos = maxLength;
+        } else {
+            let offset = 1;
+            while ((maxLength - offset) > 0) {
+                c = words[maxLength - offset];
+                if (c.match(/\s/)) {
+                    cutPos = maxLength - offset;
+                    break;
+                }
+                offset++;
+            }
+            if (maxLength - offset <= 0) {
+                cutPos = maxLength;
+                wsLength = 0;
+            }
+        }
+        const part = words.substring(0, cutPos);
+        destination.push(part);
+        return IrcUtil.splitLongLines(words.substring(cutPos + wsLength, words.length), maxLength, destination);
+    }
+
+    public static splitMessage(target: string, text: string, ircLineMax: number, lineLengthLimit?: number): string[] {
+        let maxLength = ircLineMax - target.length;
+        if (lineLengthLimit) {
+            maxLength = Math.min(maxLength, lineLengthLimit);
+        }
+        if (text) {
+            return text.toString().split(/\r?\n/).filter((line) => {
+                return line.length > 0;
+            }).map((line) => {
+                return IrcUtil.splitLongLines(line, maxLength, []);
+            }).reduce((a, b) => {
+                return a.concat(b);
+            }, []);
+        }
+        return [];
+    }
+
 }

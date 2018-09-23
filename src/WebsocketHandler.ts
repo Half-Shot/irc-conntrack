@@ -20,6 +20,13 @@ export interface IWsIrcMessage {
     msg: IMessage;
 }
 
+interface ICloseArgs {
+    wasClean: boolean;
+    code: number;
+    reason: string;
+    target: Ws;
+}
+
 export class WebsocketHandler extends EventEmitter {
     private connections: Map<string, Ws>;
 
@@ -44,7 +51,9 @@ export class WebsocketHandler extends EventEmitter {
         connection.onopen = this.onOpen.bind(this);
         connection.onmessage = this.onMessage.bind(this);
         connection.onerror = this.onError.bind(this);
-        connection.onclose = this.onClose.bind(this);
+        connection.onclose = (e: ICloseArgs) => {
+            this.onClose(e, host);
+        };
         this.emit("connected", host, connection);
     }
 
@@ -92,7 +101,8 @@ export class WebsocketHandler extends EventEmitter {
         log.warn(`onError error=${e.error} type=${e.type} msg=${e.message}`);
     }
 
-    private onClose(e: {wasClean: boolean, code: number, reason: string, target: Ws}) {
+    private onClose(e: ICloseArgs, host: string) {
         log.info(`onClose code=${e.code} reason=${e.reason} wasClean=${e.wasClean}`);
+        this.connections.delete(host);
     }
 }

@@ -11,7 +11,9 @@ import { INames } from "./Messages/INames";
 import { ISupports } from "./Messages/ISupports";
 
 const DEFAULT_CONNECTION_TIMEOUT_MS = 10000;
-const BUFFER_SIZE = 1024;
+const BLOCKSIZE = 1024;
+const NBLOCKS = 16;
+const BUFFER_SIZE = BLOCKSIZE * NBLOCKS; // 16KB aught to be enough for anyone.
 const LINE_DELIMITER = new RegExp("\r\n|\r|\n");
 
 const NICK_CONFLICT_STRAT_NEXT_NICK = 0;

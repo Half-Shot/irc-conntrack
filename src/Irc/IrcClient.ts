@@ -9,6 +9,7 @@ import { MessageParser } from "./MessageParser";
 import { IrcState } from "./IrcState";
 import { INames } from "./Messages/INames";
 import { ISupports } from "./Messages/ISupports";
+import {IJoin} from "./Messages/IJoin";
 
 const DEFAULT_CONNECTION_TIMEOUT_MS = 10000;
 const BLOCKSIZE = 1024;
@@ -199,6 +200,36 @@ export class IrcClient extends Socket {
             });
         });
         await this.send("whois", nick);
+        return p;
+    }
+
+    /**
+     * Join a channel. This will await the 'join' event.
+     * @param channel The channel name to join.
+     * @param checkSupported Should we pre-emptively check if the name is supported by the server.
+     */
+    public async join(channel: string, checkSupported: boolean = true) {
+        if (checkSupported) {
+            if (!this.supported.channel.types.includes(channel[0])) {
+                throw new Error("Channel type not supported");
+            }
+            if (this.supported.channel.length < channel.length) {
+                throw new Error(`Channel name is too long (${channel.length} > ${this.supported.channel.length})`);
+            }
+        }
+
+        if (/\s/.exec(channel)) {
+            throw new Error("Channel name cannot contain whitespace");
+        }
+        const p = new Promise((resolve, reject) => {
+            this.once(`join${channel}`, (msg: IJoin) => {
+                resolve(msg);
+            });
+            this.once(`action_error:${channel}`, (err: IError) => {
+                reject(err.error);
+            });
+        });
+        await this.send("JOIN", channel);
         return p;
     }
     public send(...args: string[]): Promise<void> {

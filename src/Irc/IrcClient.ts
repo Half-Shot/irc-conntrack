@@ -44,6 +44,20 @@ export class IrcClient extends Socket {
     constructor(readonly uuid: string, private ircOpts: IrcConnectionOpts, opts?: SocketConstructorOpts) {
         super(opts);
         const LOG_UUID_LENGTH = 12;
+
+        // Ensure ircOpts has everything needed.
+        if (!this.ircOpts.nicknames) {
+            throw new Error("nickname not given");
+        }
+
+        if (!this.ircOpts.realname) {
+            throw new Error("realname not given");
+        }
+
+        if (!this.ircOpts.username) {
+            throw new Error("username not given");
+        }
+
         this.log = new Log("Cli#" + this.uuid.substr(0, LOG_UUID_LENGTH));
         this.supported = getDefaultSupported();
         this.dataBuffer = Buffer.alloc(BUFFER_SIZE);

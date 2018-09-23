@@ -100,8 +100,8 @@ export class MessageParser extends EventEmitter {
      * This will throw on an error rather than emitting one, and the calling
      * function should decide whether to terminate the connection based on the error.
      */
-    public actOnMessage(msg: IMessage) {
-        this.handleMessage(msg);
+    public actOnMessage(msg: IMessage): boolean {
+        return this.handleMessage(msg);
     }
 
     private onWelcome(msg: IMessage) {
@@ -510,7 +510,7 @@ export class MessageParser extends EventEmitter {
         this.emit("nickname_unacceptable", msg);
     }
 
-    private handleMessage(msg: IMessage) {
+    private handleMessage(msg: IMessage): boolean {
         // indexes
         const MYINFO_USERMODES = 3;
         const AWAY = 0;
@@ -598,7 +598,7 @@ export class MessageParser extends EventEmitter {
            case "rpl_whoischannels":
               // TODO - clean this up?
                if (msg.args.length <= 2) {
-                   return;
+                   return false;
                }
                this.state.setWhoisData(msg.args[1], "channels", msg.args[2].trim().split(/\s+/));
                break;
@@ -699,8 +699,10 @@ export class MessageParser extends EventEmitter {
                    throw new Error("Error on message: ${msg.command} ${msg.rawCommand}");
                }
                this.log.verbose(`Unhandled ${msg.command} ${msg.rawCommand}`);
+               return false;
                break;
        }
+        return true;
     }
 }
 

@@ -59,6 +59,7 @@ export class RestHandler {
                 errcode: ERRCODES.clientNotFound,
                 error: "No clients found",
             } as IErrorResponse);
+            return;
         }
         res.send({connections: conns} as IConnectionsResponse);
     }
@@ -76,6 +77,7 @@ export class RestHandler {
                 errcode: ERRCODES.clientNotFound,
                 error: "No clients found",
             } as IErrorResponse);
+            return;
         }
         res.send(conn[0] as IConnectionState);
     }

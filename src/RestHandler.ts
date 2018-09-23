@@ -33,10 +33,10 @@ export class RestHandler {
         this.app.use(express.json());
         this.app.use(this.logRequest.bind(this));
         this.app.use(this.checkToken.bind(this));
-        this.app.get("/_irc/connections/:server", this.getConnections.bind(this));
-        this.app.get("/_irc/connections/:server/:id", this.getConnection.bind(this));
         this.app.post("/_irc/connections/:server/open", this.openConnection.bind(this));
         this.app.post("/_irc/connections/:server/:id/disconnect", this.disconnectConnection.bind(this));
+        this.app.get("/_irc/connections/:server/:id", this.getConnection.bind(this));
+        this.app.get("/_irc/connections/:server", this.getConnections.bind(this));
         this.app.ws("/_irc/ws", this.openWebsocket.bind(this));
         this.app.get("/_irc/config", this.readConfig.bind(this));
         this.app.post("/_irc/config", this.updateConfig.bind(this));

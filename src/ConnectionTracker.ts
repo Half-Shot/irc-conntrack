@@ -59,7 +59,7 @@ export class ConnectionTracker {
         }) as IConnectionState[];
     }
 
-    public openConnection(serverName: string, opts: IrcConnectionOpts): Promise<string> {
+    public async openConnection(serverName: string, opts: IrcConnectionOpts): Promise<string> {
         const server = this.config.serverConfig(serverName);
         if (server === undefined) {
             log.warn(`Connection was requested for unknown server ${serverName}`);
@@ -74,28 +74,24 @@ export class ConnectionTracker {
             );
         }
         const uuid = Uuid();
+        log.verbose("Creating new connection with:", JSON.stringify(opts));
         const client = new IrcClient(uuid, opts);
-        return client.initiate(server).then(() => {
-            this.ircClients.set(uuid, client);
-            let clientServerSet = this.serverClients.get(serverName);
-            if (clientServerSet === undefined) {
-                clientServerSet = new Set();
-                this.serverClients.set(serverName, clientServerSet);
-            }
-            clientServerSet.add(uuid);
-            this.bindListenersForClient(client);
-            return uuid;
-        });
+        await client.initiate(server)
+        this.ircClients.set(uuid, client);
+        let clientServerSet = this.serverClients.get(serverName);
+        if (clientServerSet === undefined) {
+            clientServerSet = new Set();
+            this.serverClients.set(serverName, clientServerSet);
+        }
+        clientServerSet.add(uuid);
+        this.bindListenersForClient(client);
+        return uuid;
     }
 
     public runCommand(cmd: IWsCommand, ws: Ws) {
         const UUID_SHORT_LENGTH = 12;
         const ID_SHORT_LENGTH = 12;
         log.info(`runCommand ${cmd.client_id.substr(0, UUID_SHORT_LENGTH)} ${cmd.id.substr(0, ID_SHORT_LENGTH)}`);
-        if (!["raw"].includes(cmd.type)) {
-            ws.send(JSON.stringify({id: cmd.id, errcode: ERRCODES.commandNotRecognised}));
-            return;
-        }
         const client = this.ircClients.get(cmd.client_id);
         if (!client) {
             ws.send(JSON.stringify({id: cmd.id, errcode: ERRCODES.clientNotFound}));
@@ -103,6 +99,15 @@ export class ConnectionTracker {
         }
         if (cmd.type === "raw") {
             client.send(cmd.content as string);
+        } else if (cmd.type === "join" || cmd.type === "part") {
+            const content = cmd.content as IWsContentJoinPart;
+            client[cmd.type](content.channel);
+        } else if (cmd.type === "say" || cmd.type === "action" || cmd.type === "notice") {
+            const content = cmd.content as IWsContentSay;
+            client[cmd.type](content.target, content.text);
+        } else {
+            ws.send(JSON.stringify({id: cmd.id, errcode: ERRCODES.commandNotRecognised}));
+            return;
         }
     }
 
@@ -115,6 +120,9 @@ export class ConnectionTracker {
         });
         client.on("raw", (msg: IMessage) => {
             this.wsHandler.onIrcMessage("raw", client.uuid, msg);
+        });
+        client.on("error", (e: string) => {
+            log.error("Client emitted an ERROR:", e);
         });
         const emitter = client.msgEmitter;
         const LISTEN_FOR = [

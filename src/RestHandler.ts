@@ -92,7 +92,7 @@ export class RestHandler {
             } as IOpenResponse);
         }).catch((err: Error) => {
             res.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
-            res.send(err);
+            res.send({errcode: ERRCODES.genericFail, error: err.message} as IErrorResponse);
         });
     }
 

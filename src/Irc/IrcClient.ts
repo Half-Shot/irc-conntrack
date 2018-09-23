@@ -10,6 +10,7 @@ import { IrcState } from "./IrcState";
 import { INames } from "./Messages/INames";
 import { ISupports } from "./Messages/ISupports";
 import {IJoin} from "./Messages/IJoin";
+import {IPart} from "./Messages/IPart";
 
 const DEFAULT_CONNECTION_TIMEOUT_MS = 10000;
 const BLOCKSIZE = 1024;
@@ -230,6 +231,23 @@ export class IrcClient extends Socket {
             });
         });
         await this.send("JOIN", channel);
+        return p;
+    }
+
+    /**
+     * Part the given channel.
+     * @param channel
+     */
+    public async part(channel: string) {
+        const p = new Promise((resolve, reject) => {
+            this.once(`part${channel}`, (msg: IPart) => {
+                resolve(msg);
+            });
+            this.once(`action_error:${channel}`, (err: IError) => {
+                reject(err.error);
+            });
+        });
+        await this.send("PART", channel);
         return p;
     }
     public send(...args: string[]): Promise<void> {

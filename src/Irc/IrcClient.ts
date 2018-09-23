@@ -103,17 +103,29 @@ export class IrcClient extends Socket {
         });
     }
 
+    /**
+     * Get the complete state for the client. This
+     * will return a copy of the state which can be freely
+     * modified.
+     */
     public get ircState() {
         return Object.assign({}, this.state);
     }
 
     /**
-     * Use this to listen for parsed  messages from the IRC connection.
+     * Use this to listen for parsed messages from the IRC connection.
+     * The list of expected events and args can be found in {@link MessageParser}
      */
     public get msgEmitter() {
         return this.msgParser;
     }
 
+    /**
+     * Start connecting to the given server. This will resolve
+     * when the connected has been accepted and we have sent identity
+     * commands given in onConnected.
+     * @param server The server to connect to.
+     */
     public initiate(server: ConfigServer): Promise<undefined> {
         this.log.info(`Creating new connection for ${server.name}`);
         const address = server.addressTuple[0];
@@ -154,6 +166,11 @@ export class IrcClient extends Socket {
         });
     }
 
+    /**
+     * Send a QUIT with a given message, and then end the connection.
+     * This will never reconnect.
+     * @param message
+     */
     public async disconnect(message: string = QUIT_MSG): Promise<void> {
         // TODO: Check if we are connected.
         await this.send("QUIT", message);

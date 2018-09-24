@@ -12,7 +12,7 @@ The specification lives in [this Google doc](https://goo.gl/q2HgLA) currently.
 
 The service is designed to be used with a Matrix appservice, such as [matrix-appservice-irc](https://github.com/matrix-org/matrix-appservice-irc).
 
-A bridge administator would spin up one (or several) instances of this service and configure the configuration file with all the presets needed to connect to an IRC network. Then, they would point the bridge at the service and the bridge would begin to connect all it's users. 
+A bridge administator would spin up one (or several) instances of this service and configure the configuration file with all the presets needed to connect to an IRC network. Then, they would point the bridge at the service and the bridge would begin to connect all it's users.
 
 Should the bridge crash at some point, the IRC connections remain intact while the bridge restarts and carrys on as normal. If a configuration update is needed on this service, it can be applied without restarting the service.
 

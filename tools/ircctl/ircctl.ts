@@ -25,7 +25,6 @@ const COMMANDS = [
 ];
 
 const listenFilter = {
-    server: "",
     id: "",
 };
 
@@ -159,12 +158,7 @@ async function handleCommand(args: string[], client: Ws, request: RequestAPI<any
             await handleList(args, request);
             break;
         case "filter":
-            if (args.length > 1) {
-                listenFilter.server = args[1];
-            }
-            if (args.length > 2) {
-                listenFilter.id = args[2];
-            }
+            listenFilter.id = args[1];
         case "connect":
             if (args.length < 2) { // nick, realname, username
                 log.warn("Missing arg 'server'");

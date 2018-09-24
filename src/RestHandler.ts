@@ -12,6 +12,7 @@ import {IConnectionsResponse, IConnectionState} from "./Rest/IConnectionsRespons
 import { IOpenResponse } from "./Rest/IOpenResponse";
 import { IrcConnectionOpts } from "./Irc/IrcClient";
 import * as HttpStatus from "http-status-codes";
+import {Metrics} from "./Metrics";
 
 const log = new Log("RestHandler");
 const logHttp = new Log("http");
@@ -30,6 +31,11 @@ export class RestHandler {
     public configure() {
         const app = express();
         this.app = expressWs(app).app;
+        if (this.config.metrics.enabled) {
+            this.app.get("/metrics", (req: Request, res: Response) => {
+                res.send(Metrics.getMetrics());
+            });
+        }
         this.app.use(express.json());
         this.app.use(this.logRequest.bind(this));
         this.app.use(this.checkToken.bind(this));

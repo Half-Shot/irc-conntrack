@@ -4,6 +4,7 @@ import { Log } from "./Log";
 import { EventEmitter } from "events";
 import { IMessage } from "./Irc/IMessage";
 import {IWsCommand} from "./WebsocketCommands";
+import {Metrics} from "./Metrics";
 
 const log = new Log("WebsocketHandler");
 
@@ -41,7 +42,7 @@ export class WebsocketHandler extends EventEmitter {
         }
 
         // Bind handlers
-        connection.onopen = this.onOpen.bind(this);
+        Metrics.openWebsocketConnections.inc({host});
         connection.onmessage = this.onMessage.bind(this);
         connection.onerror = this.onError.bind(this);
         connection.onclose = (e: ICloseArgs) => {
@@ -62,12 +63,9 @@ export class WebsocketHandler extends EventEmitter {
 
     public onIrcMessage(event: string, id: string, msg: IMessage) {
         this.connections.forEach((cn) => {
+            Metrics.websocketMessagesSent.inc();
             cn.send(JSON.stringify({event, client_id: id, msg} as IWsIrcMessage));
         });
-    }
-
-    private onOpen(e: {target: Ws}) {
-        log.info(`onOpen url=${e.target.url} state=${e.target.readyState}`);
     }
 
     private onMessage(e: {data: Ws.Data, type: string, target: Ws}) {
@@ -83,6 +81,7 @@ export class WebsocketHandler extends EventEmitter {
                  `Got command type=${wsCmd.type} id=${wsCmd.id}` +
                       `client=${wsCmd.client_id} content=${JSON.stringify(wsCmd.content)}`,
              );
+             Metrics.websocketMessagesReceived.inc();
              this.emit("command", wsCmd, e.target);
         } catch (e) {
             // Command not understood. Not saying anything.
@@ -96,6 +95,7 @@ export class WebsocketHandler extends EventEmitter {
 
     private onClose(e: ICloseArgs, host: string) {
         log.info(`onClose code=${e.code} reason=${e.reason} wasClean=${e.wasClean}`);
+        Metrics.openWebsocketConnections.dec({host});
         this.connections.delete(host);
     }
 }

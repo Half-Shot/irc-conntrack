@@ -12,6 +12,7 @@ import { ISupports } from "./Messages/ISupports";
 import {IJoin} from "./Messages/IJoin";
 import {IError} from "./Messages/IError";
 import {IPart} from "./Messages/IPart";
+import {Metrics} from "../Metrics";
 
 const DEFAULT_CONNECTION_TIMEOUT_MS = 10000;
 const BLOCKSIZE = 1024;
@@ -294,6 +295,7 @@ export class IrcClient extends Socket {
         this.log.silly(`TX:"${msg}"`);
         return new Promise((resolve) => {
             this.write(msg + "\r\n", "utf-8", () => {resolve(); });
+            Metrics.ircMessagesSent.inc();
         });
     }
 
@@ -353,7 +355,6 @@ export class IrcClient extends Socket {
                 DELIMITER.charCodeAt(1),
             ]));
         }
-        this.log.silly(`RXPART:${chunk.toString()}`);
         this.dataBufferLength += chunk.length;
         if (this.dataBufferLength > BUFFER_SIZE) {
             this.dataBuffer.fill(0, 0);
@@ -382,6 +383,7 @@ export class IrcClient extends Socket {
         this.log.silly(`RX:"${line}"`);
         let msg: IMessage;
         try {
+            Metrics.ircMessagesReceived.inc();
             msg = parseMessage(line, this.ircOpts.stripColors);
             if (msg.badFormat) {
                 this.emit("error", new Error("Message was badly formatted"));

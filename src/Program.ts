@@ -4,6 +4,7 @@ import { Config } from "./Config";
 import { WebsocketHandler } from "./WebsocketHandler";
 import { Log } from "./Log";
 import * as Command from "commander";
+import {Metrics} from "./Metrics";
 
 const log = new Log("main");
 
@@ -22,6 +23,10 @@ function main() {
     }
 
     log.info("Read config");
+    if (config.metrics.enabled) {
+        Metrics.Configure(config.metrics);
+    }
+    Log.Configure(config.logging);
     if (Command.configOption) {
         const opts = Array.isArray(Command.configOption) ? Command.configOption : [Command.configOption];
         (opts).forEach((value: string) => {
@@ -45,6 +50,7 @@ function main() {
         websocketHandler,
         config,
     );
+
     log.info("Starting rest handler");
     rest.configure();
     rest.listen();

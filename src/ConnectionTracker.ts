@@ -8,6 +8,7 @@ import { Log } from "./Log";
 import * as Ws from "ws";
 import { IMessage } from "./Irc/IMessage";
 import {IWsCommand, IWsContentJoinPart, IWsContentSay} from "./WebsocketCommands";
+import {Metrics} from "./Metrics";
 
 const log = new Log("ConnTrack");
 
@@ -85,6 +86,7 @@ export class ConnectionTracker {
         }
         clientServerSet.add(uuid);
         this.bindListenersForClient(client);
+        Metrics.ircConnectionCountGauge.inc({server: serverName});
         return uuid;
     }
 
@@ -114,7 +116,9 @@ export class ConnectionTracker {
     private bindListenersForClient(client: IrcClient) {
         client.on("end", () => {
             this.ircClients.delete(client.uuid);
-            this.serverClients.forEach((set) => set.delete(client.uuid));
+            let serverName: string = "";
+            this.serverClients.forEach((set, sName: string) => {set.delete(client.uuid); serverName = sName; });
+            Metrics.ircConnectionCountGauge.dec({server: serverName});
             client.msgEmitter.removeAllListeners();
             client.removeAllListeners();
         });

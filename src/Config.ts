@@ -14,10 +14,18 @@ const PROTECTED_FIELDS = [
 const DEFAULT_PORT = 9000;
 const DEFAULT_BACKLOG = 10;
 const DEFAULT_WS_CONNECTIONS = 5;
-
 const DEFAULT_IRC_CLIENTS = 50;
+const DEFAULT_METRICS_COLLECTION_PERIOD = 5000;
 
 export class Config {
+
+    public get logging(): ConfigLogging {
+        return new ConfigLogging(this.doc.logging || {});
+    }
+
+    public get metrics(): ConfigMetrics {
+        return new ConfigMetrics(this.doc.metrics || {});
+    }
 
     public get bindAddress(): string {
         return this.doc["bind-address"] || "127.0.0.1";
@@ -38,11 +46,6 @@ export class Config {
     public get accessToken(): string {
         return this.doc["access-token"];
     }
-
-    public get logging(): ConfigLogging {
-        return new ConfigLogging();
-    }
-
     public get rawDocument(): any {
         return this.doc;
     }
@@ -94,7 +97,17 @@ export class Config {
 
     public setOption(key: string, value: string|number) {
         log.info(`Set ${key}=${value}`);
-        this.doc[key] = value;
+        let level = this.doc;
+        let parts = key.split(".");
+        while (parts.length > 1) {
+            if (level[parts[0]] === undefined) {
+                level = {};
+            } else {
+                level = level[parts[0]];
+            }
+            parts = key.replace(parts[0] + ".", "").split(".");
+        }
+        level[parts[0]] = value;
     }
 
     public applyConfig(newCfg: Config) {
@@ -175,11 +188,42 @@ export class ConfigServer {
 }
 
 export class ConfigLogging {
+
+    constructor(private doc: any = {}) {
+
+    }
+
+    public setOption(key: string, value: string|number) {
+        this.doc[key] = value;
+    }
+
     public get lineDateFormat(): string {
-        return "";
+        return this.doc.lineDateFormat || "";
     }
 
     public get console(): string {
-        return "silly";
+        return this.doc.console || "silly";
+    }
+}
+
+export class ConfigMetrics {
+    constructor(private doc: any = {}) {
+
+    }
+
+    public setOption(key: string, value: string|number) {
+        this.doc[key] = value;
+    }
+
+    public get enabled() {
+        return this.doc.enabled || false;
+    }
+
+    public get prefix() {
+        return this.doc.prefix || "irc_conntrack_";
+    }
+
+    public get defaultMetricsCollectionInterval() {
+        return this.doc.defaultMetricsCollectionInterval || DEFAULT_METRICS_COLLECTION_PERIOD;
     }
 }

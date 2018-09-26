@@ -3,3 +3,6 @@ languageCode = "en-us"
 title = "IRC Conntrack Specification"
 theme = "hugo-theme-learn"
 sectionPagesMenu = "main"
+
+[params]
+  themeVariant = "blue"

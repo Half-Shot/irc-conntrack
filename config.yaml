@@ -1,6 +1,0 @@
-access-token: "foop"
-servers:
-  - name: localserver
-    addresses:
-      - localhost:6667"
-    ipv6: false

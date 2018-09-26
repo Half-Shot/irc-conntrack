@@ -1,7 +1,0 @@
-access-token: "foop"
-servers:
-  - name: foo
-    addresses:
-      - localhost:6667"
-    ipv6: false
-    max-connections: 5

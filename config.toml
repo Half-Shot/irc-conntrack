@@ -1,0 +1,5 @@
+baseURL = "https://half-shot.github.io/irc-conntrack"
+languageCode = "en-us"
+title = "IRC Conntrack Specification"
+theme = "hugo-theme-learn"
+sectionPagesMenu = "main"

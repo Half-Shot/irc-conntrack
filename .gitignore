@@ -1,4 +1,2 @@
-node_modules/
-.nyc/
-.nyc_output/
-build/
+public/
+themes/

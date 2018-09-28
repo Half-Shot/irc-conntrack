@@ -10,5 +10,15 @@
 	<atom:link href="https://half-shot.github.io/irc-conntrack/index.xml" rel="self" type="application/rss+xml" />
     
     
+    <item>
+      <title>/_irc/connections</title>
+      <link>https://half-shot.github.io/irc-conntrack/spec/unstable/rest/connections/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://half-shot.github.io/irc-conntrack/spec/unstable/rest/connections/</guid>
+      <description>GET /_irc/connections/$server This endpoint will fetch all connections for a given server. This should be called on appservice startup and during outages. The output varies by what detail is set to. A state list will return the same as fetching the connection state, except it will fetch for all connections whereas list will just fetch the list of connections that are open.
+Closed connections will not be included in the list and clients are encouraged to use the websocket connection to catch these.</description>
+    </item>
+    
   </channel>
 </rss>

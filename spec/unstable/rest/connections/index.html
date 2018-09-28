@@ -9,7 +9,7 @@
 
     <link rel="shortcut icon" href="/irc-conntrack/images/favicon.png" type="image/x-icon" />
 <link rel="icon" href="/irc-conntrack/images/favicon.png" type="image/x-icon" />
-    <title>Specs :: IRC Conntrack Specification</title>
+    <title>/_irc/connections :: IRC Conntrack Specification</title>
 
     
     <link href="/irc-conntrack/css/nucleus.css?1538141740" rel="stylesheet">
@@ -34,7 +34,7 @@
     </style>
     
   </head>
-  <body class="" data-url="/irc-conntrack/spec/">
+  <body class="" data-url="/irc-conntrack/spec/unstable/rest/connections/">
     <nav id="sidebar" class="">
 
 
@@ -75,7 +75,7 @@
     
     <li data-nav-id="/irc-conntrack/spec/" title="Specs" class="dd-item 
         parent
-        active
+        
         
         ">
       <a href="/irc-conntrack/spec/">
@@ -101,7 +101,7 @@
   
     
     <li data-nav-id="/irc-conntrack/spec/unstable/" title="Unstable" class="dd-item 
-        
+        parent
         
         
         ">
@@ -128,7 +128,7 @@
   
     
     <li data-nav-id="/irc-conntrack/spec/unstable/rest/" title="REST" class="dd-item 
-        
+        parent
         
         
         ">
@@ -152,7 +152,7 @@
  
   
     
-      <li data-nav-id="/irc-conntrack/spec/unstable/rest/connections/" title="/_irc/connections" class="dd-item ">
+      <li data-nav-id="/irc-conntrack/spec/unstable/rest/connections/" title="/_irc/connections" class="dd-item active">
         <a href="/irc-conntrack/spec/unstable/rest/connections/">
         /_irc/connections
         
@@ -257,7 +257,25 @@
             
           
           
-            <a href='/irc-conntrack/'>Home</a> > Specs
+            
+            
+          
+          
+            
+            
+          
+          
+            
+            
+          
+          
+            <a href='/irc-conntrack/'>Home</a> > <a href='/irc-conntrack/spec/'>Specs</a> > <a href='/irc-conntrack/spec/unstable/'>Unstable</a> > <a href='/irc-conntrack/spec/unstable/rest/'>REST</a> > /_irc/connections
+          
+         
+          
+         
+          
+         
           
          
           
@@ -267,7 +285,30 @@
                 
                     <div class="progress">
     <div class="wrapper">
-
+<nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li><a href="#get-irc-connections-server">GET <code>/_irc/connections/$server</code></a>
+<ul>
+<li><a href="#request-format">Request format</a></li>
+<li><a href="#response-format">Response format</a>
+<ul>
+<li><a href="#detail-state">detail == &ldquo;state&rdquo;</a></li>
+<li><a href="#detail-ids">detail == &ldquo;ids&rdquo;</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#get-irc-connections-server-id">GET <code>/_irc/connections/$server/$id</code></a>
+<ul>
+<li><a href="#response-format-1">Response format</a></li>
+</ul></li>
+<li><a href="#types">Types</a>
+<ul>
+<li><a href="#connectionstate">ConnectionState</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
     </div>
 </div>
 
@@ -279,7 +320,7 @@
         
         <div id="body-inner">
           
-            <h1>Specs</h1>
+            <h1>/_irc/connections</h1>
           
 
         
@@ -287,9 +328,141 @@
 
 
 
+<h2 id="get-irc-connections-server">GET <code>/_irc/connections/$server</code></h2>
+
+<p>This endpoint will fetch all connections for a given server. This should be called on appservice startup and during outages.
+The output varies by what <code>detail</code> is set to. A state list will return the same as fetching the connection state, except
+it will fetch for all connections whereas list will just fetch the list of connections that are open.</p>
+
+<p>Closed connections will not be included in the list and clients are encouraged to use the websocket connection to catch these.</p>
+
+<h3 id="request-format">Request format</h3>
+
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>server</td>
+<td><code>string</code></td>
+<td>The irc server (e.g. irc.freenode.net)</td>
+</tr>
+
+<tr>
+<td>detail</td>
+<td><code>string</code></td>
+<td>The level of detail to respond with. One of [“state”, “ids”]. Defaults to “state”</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="response-format">Response format</h3>
+
+<h4 id="detail-state">detail == &ldquo;state&rdquo;</h4>
+
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>connections</td>
+<td><a href="#connectionstate">ConnectionState</a>[]</td>
+<td>A list of state for each connection.</td>
+</tr>
+</tbody>
+</table>
+
+<h4 id="detail-ids">detail == &ldquo;ids&rdquo;</h4>
+
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>connections</td>
+<td>string[]</td>
+<td>A list of <a href="/irc-conntrack/spec/unstable/#client-ids">client_ids</a></td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="get-irc-connections-server-id">GET <code>/_irc/connections/$server/$id</code></h2>
+
+<p>Get the state of a given connection. Both unknown ids and closed connections will respond with a 404.</p>
+
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>server</td>
+<td><code>string</code></td>
+<td>The irc server (e.g. irc.freenode.net)</td>
+</tr>
+
+<tr>
+<td>id</td>
+<td><code>string</code></td>
+<td>The <a href="/irc-conntrack/spec/unstable/#client-ids">client_id</a></td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="response-format-1">Response format</h3>
+
+<p>See <a href="#connectionstate">ConnectionState</a></p>
+
+<h2 id="types">Types</h2>
+
+<h3 id="connectionstate">ConnectionState</h3>
+
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>&hellip;</td>
+<td>&hellip;</td>
+<td>&hellip;</td>
+</tr>
+</tbody>
+</table>
+
+
 <footer class=" footline" >
 	
 </footer>
+
 
         
         </div> 
@@ -338,8 +511,6 @@
             
                 
                     
-                        
-                        
                     
                 
                 
@@ -356,6 +527,7 @@
             
                 
                     
+                    
                 
                 
 
@@ -369,6 +541,7 @@
             
                 
                     
+                    
                 
                 
 
@@ -388,6 +561,9 @@
             
                 
                     
+                        
+                        
+                    
                 
                 
 
@@ -412,10 +588,10 @@
 
 
         
-            <a class="nav nav-prev" href="/irc-conntrack/" title="Home"> <i class="fas fa-chevron-left"></i></a>
+            <a class="nav nav-prev" href="/irc-conntrack/spec/unstable/rest/" title="REST"> <i class="fas fa-chevron-left"></i></a>
         
         
-            <a class="nav nav-next" href="/irc-conntrack/spec/unstable/" title="Unstable" style="margin-right: 0px;"><i class="fas fa-chevron-right"></i></a>
+            <a class="nav nav-next" href="/irc-conntrack/spec/unstable/websocket/" title="Websocket" style="margin-right: 0px;"><i class="fas fa-chevron-right"></i></a>
         
     </div>
 
@@ -445,3 +621,4 @@
 
   </body>
 </html>
+

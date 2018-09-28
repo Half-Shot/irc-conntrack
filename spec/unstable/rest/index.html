@@ -12,19 +12,19 @@
     <title>REST :: IRC Conntrack Specification</title>
 
     
-    <link href="/irc-conntrack/css/nucleus.css?1538096605" rel="stylesheet">
-    <link href="/irc-conntrack/css/fontawesome-all.min.css?1538096605" rel="stylesheet">
-    <link href="/irc-conntrack/css/hybrid.css?1538096605" rel="stylesheet">
-    <link href="/irc-conntrack/css/featherlight.min.css?1538096605" rel="stylesheet">
-    <link href="/irc-conntrack/css/perfect-scrollbar.min.css?1538096605" rel="stylesheet">
-    <link href="/irc-conntrack/css/auto-complete.css?1538096605" rel="stylesheet">
-    <link href="/irc-conntrack/css/theme.css?1538096605" rel="stylesheet">
-    <link href="/irc-conntrack/css/hugo-theme.css?1538096605" rel="stylesheet">
+    <link href="/irc-conntrack/css/nucleus.css?1538141740" rel="stylesheet">
+    <link href="/irc-conntrack/css/fontawesome-all.min.css?1538141740" rel="stylesheet">
+    <link href="/irc-conntrack/css/hybrid.css?1538141740" rel="stylesheet">
+    <link href="/irc-conntrack/css/featherlight.min.css?1538141740" rel="stylesheet">
+    <link href="/irc-conntrack/css/perfect-scrollbar.min.css?1538141740" rel="stylesheet">
+    <link href="/irc-conntrack/css/auto-complete.css?1538141740" rel="stylesheet">
+    <link href="/irc-conntrack/css/theme.css?1538141740" rel="stylesheet">
+    <link href="/irc-conntrack/css/hugo-theme.css?1538141740" rel="stylesheet">
     
-      <link href="/irc-conntrack/css/theme-blue.css?1538096605" rel="stylesheet">
+      <link href="/irc-conntrack/css/theme-blue.css?1538141740" rel="stylesheet">
     
 
-    <script src="/irc-conntrack/js/jquery-2.x.min.js?1538096605"></script>
+    <script src="/irc-conntrack/js/jquery-2.x.min.js?1538141740"></script>
 
     <style type="text/css">
       :root #header + #content > #left > #rlblock_left{
@@ -50,14 +50,14 @@
     <span data-search-clear=""><i class="fas fa-close"></i></span>
 </div>
 
-<script type="text/javascript" src="/irc-conntrack/js/lunr.min.js?1538096605"></script>
-<script type="text/javascript" src="/irc-conntrack/js/auto-complete.js?1538096605"></script>
+<script type="text/javascript" src="/irc-conntrack/js/lunr.min.js?1538141740"></script>
+<script type="text/javascript" src="/irc-conntrack/js/auto-complete.js?1538141740"></script>
 <script type="text/javascript">
     
         var baseurl = '\/irc-conntrack';
     
 </script>
-<script type="text/javascript" src="/irc-conntrack/js/search.js?1538096605"></script>
+<script type="text/javascript" src="/irc-conntrack/js/search.js?1538141740"></script>
 
     
   </div>
@@ -137,6 +137,35 @@
           
       </a>
       
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/irc-conntrack/spec/unstable/rest/connections/" title="/_irc/connections" class="dd-item ">
+        <a href="/irc-conntrack/spec/unstable/rest/connections/">
+        /_irc/connections
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
               
     </li>
   
@@ -254,9 +283,11 @@
 <ul>
 <li>
 <ul>
-<li>
+<li><a href="#rest-specification-index">REST Specification Index</a>
 <ul>
-<li><a href="#rest-specification-index">REST Specification Index</a></li>
+<li><a href="#authentication">Authentication</a></li>
+<li><a href="#errors">Errors</a></li>
+<li><a href="#example">Example</a></li>
 </ul></li>
 </ul></li>
 </ul>
@@ -280,7 +311,106 @@
 
 
 
-<h3 id="rest-specification-index">REST Specification Index</h3>
+<h2 id="rest-specification-index">REST Specification Index</h2>
+
+<p>The REST API provides a simple way to modify the state
+of the connection tracker without having to listen for events over a websocket connection. Generally speaking these operations are done syncronously with the request as oppose to the asyncronous nature of Websockets. For example a call to <code>/_irc/connections/$server/open</code> will not complete until a connection has been opened or has failed to open.</p>
+
+<h3 id="authentication">Authentication</h3>
+
+<p><strong>All</strong> endpoints require an access token to be used. The access token should be provided in the <code>Authorization header</code> in the format <code>Bearer ACCESS_TOKEN</code> but can be specified as a query parameter under the <code>access_token</code> field.</p>
+
+<h3 id="errors">Errors</h3>
+
+<p>Errors are sent with a standard format of</p>
+
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>errcode</td>
+<td><code>string</code></td>
+<td>A standard error code given below.</td>
+</tr>
+
+<tr>
+<td>irc_reason</td>
+<td><code>string</code></td>
+<td>An optional reason string.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="example">Example</h3>
+
+<pre><code>{
+    errcode: “IC_FAILED”,
+    irc_reason: “err_banned” (or some other failure error)
+}
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>ERRCODE</th>
+<th>Typical Reason</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>IC_MISSING_PARAM</td>
+<td>Parameter(s) were missing from your request.</td>
+</tr>
+
+<tr>
+<td>IC_MISSING_TOKEN</td>
+<td>You haven&rsquo;t specificed your authentication token.</td>
+</tr>
+
+<tr>
+<td>IC_BAD_TOKEN</td>
+<td>The authentication token was wrong.</td>
+</tr>
+
+<tr>
+<td>IC_NOT_IN_CONFIG</td>
+<td>The server you requested was not found in the config.</td>
+</tr>
+
+<tr>
+<td>IC_TIMEOUT</td>
+<td>The operation timed out</td>
+</tr>
+
+<tr>
+<td>IC_FAILURE</td>
+<td>Generic failure, check the reason.</td>
+</tr>
+
+<tr>
+<td>IC_CLIENT_NOT_FOUND</td>
+<td>You tried to do something with a client that wasn&rsquo;t found.</td>
+</tr>
+
+<tr>
+<td>IC_CONNECTION_LIMIT</td>
+<td>The connection limit for that server has been reached.</td>
+</tr>
+
+<tr>
+<td>IC_COMMAND_NOT_RECOGNISED</td>
+<td>The websocket command wasn&rsquo;t recognised.</td>
+</tr>
+</tbody>
+</table>
 
 
 <footer class=" footline" >
@@ -359,9 +489,6 @@
                     
 
                     
-            
-        
-                    
                         
             
             
@@ -369,6 +496,25 @@
                     
                         
                         
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
                     
                 
                 
@@ -397,7 +543,7 @@
             <a class="nav nav-prev" href="/irc-conntrack/spec/unstable/" title="Unstable"> <i class="fas fa-chevron-left"></i></a>
         
         
-            <a class="nav nav-next" href="/irc-conntrack/spec/unstable/websocket/" title="Websocket" style="margin-right: 0px;"><i class="fas fa-chevron-right"></i></a>
+            <a class="nav nav-next" href="/irc-conntrack/spec/unstable/rest/connections/" title="/_irc/connections" style="margin-right: 0px;"><i class="fas fa-chevron-right"></i></a>
         
     </div>
 
@@ -406,20 +552,20 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/irc-conntrack/js/clipboard.min.js?1538096605"></script>
-    <script src="/irc-conntrack/js/perfect-scrollbar.min.js?1538096605"></script>
-    <script src="/irc-conntrack/js/perfect-scrollbar.jquery.min.js?1538096605"></script>
-    <script src="/irc-conntrack/js/jquery.sticky.js?1538096605"></script>
-    <script src="/irc-conntrack/js/featherlight.min.js?1538096605"></script>
-    <script src="/irc-conntrack/js/html5shiv-printshiv.min.js?1538096605"></script>
-    <script src="/irc-conntrack/js/highlight.pack.js?1538096605"></script>
+    <script src="/irc-conntrack/js/clipboard.min.js?1538141740"></script>
+    <script src="/irc-conntrack/js/perfect-scrollbar.min.js?1538141740"></script>
+    <script src="/irc-conntrack/js/perfect-scrollbar.jquery.min.js?1538141740"></script>
+    <script src="/irc-conntrack/js/jquery.sticky.js?1538141740"></script>
+    <script src="/irc-conntrack/js/featherlight.min.js?1538141740"></script>
+    <script src="/irc-conntrack/js/html5shiv-printshiv.min.js?1538141740"></script>
+    <script src="/irc-conntrack/js/highlight.pack.js?1538141740"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/irc-conntrack/js/modernizr.custom.71422.js?1538096605"></script>
-    <script src="/irc-conntrack/js/learn.js?1538096605"></script>
-    <script src="/irc-conntrack/js/hugo-learn.js?1538096605"></script>
+    <script src="/irc-conntrack/js/modernizr.custom.71422.js?1538141740"></script>
+    <script src="/irc-conntrack/js/learn.js?1538141740"></script>
+    <script src="/irc-conntrack/js/hugo-learn.js?1538141740"></script>
 
-    <link href="/irc-conntrack/mermaid/mermaid.css?1538096605" type="text/css" rel="stylesheet" />
-    <script src="/irc-conntrack/mermaid/mermaid.js?1538096605"></script>
+    <link href="/irc-conntrack/mermaid/mermaid.css?1538141740" type="text/css" rel="stylesheet" />
+    <script src="/irc-conntrack/mermaid/mermaid.js?1538141740"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

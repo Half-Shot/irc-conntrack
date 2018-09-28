@@ -12,19 +12,19 @@
     <title>Unstable :: IRC Conntrack Specification</title>
 
     
-    <link href="/irc-conntrack/css/nucleus.css?1538096605" rel="stylesheet">
-    <link href="/irc-conntrack/css/fontawesome-all.min.css?1538096605" rel="stylesheet">
-    <link href="/irc-conntrack/css/hybrid.css?1538096605" rel="stylesheet">
-    <link href="/irc-conntrack/css/featherlight.min.css?1538096605" rel="stylesheet">
-    <link href="/irc-conntrack/css/perfect-scrollbar.min.css?1538096605" rel="stylesheet">
-    <link href="/irc-conntrack/css/auto-complete.css?1538096605" rel="stylesheet">
-    <link href="/irc-conntrack/css/theme.css?1538096605" rel="stylesheet">
-    <link href="/irc-conntrack/css/hugo-theme.css?1538096605" rel="stylesheet">
+    <link href="/irc-conntrack/css/nucleus.css?1538141740" rel="stylesheet">
+    <link href="/irc-conntrack/css/fontawesome-all.min.css?1538141740" rel="stylesheet">
+    <link href="/irc-conntrack/css/hybrid.css?1538141740" rel="stylesheet">
+    <link href="/irc-conntrack/css/featherlight.min.css?1538141740" rel="stylesheet">
+    <link href="/irc-conntrack/css/perfect-scrollbar.min.css?1538141740" rel="stylesheet">
+    <link href="/irc-conntrack/css/auto-complete.css?1538141740" rel="stylesheet">
+    <link href="/irc-conntrack/css/theme.css?1538141740" rel="stylesheet">
+    <link href="/irc-conntrack/css/hugo-theme.css?1538141740" rel="stylesheet">
     
-      <link href="/irc-conntrack/css/theme-blue.css?1538096605" rel="stylesheet">
+      <link href="/irc-conntrack/css/theme-blue.css?1538141740" rel="stylesheet">
     
 
-    <script src="/irc-conntrack/js/jquery-2.x.min.js?1538096605"></script>
+    <script src="/irc-conntrack/js/jquery-2.x.min.js?1538141740"></script>
 
     <style type="text/css">
       :root #header + #content > #left > #rlblock_left{
@@ -50,14 +50,14 @@
     <span data-search-clear=""><i class="fas fa-close"></i></span>
 </div>
 
-<script type="text/javascript" src="/irc-conntrack/js/lunr.min.js?1538096605"></script>
-<script type="text/javascript" src="/irc-conntrack/js/auto-complete.js?1538096605"></script>
+<script type="text/javascript" src="/irc-conntrack/js/lunr.min.js?1538141740"></script>
+<script type="text/javascript" src="/irc-conntrack/js/auto-complete.js?1538141740"></script>
 <script type="text/javascript">
     
         var baseurl = '\/irc-conntrack';
     
 </script>
-<script type="text/javascript" src="/irc-conntrack/js/search.js?1538096605"></script>
+<script type="text/javascript" src="/irc-conntrack/js/search.js?1538141740"></script>
 
     
   </div>
@@ -137,6 +137,35 @@
           
       </a>
       
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/irc-conntrack/spec/unstable/rest/connections/" title="/_irc/connections" class="dd-item ">
+        <a href="/irc-conntrack/spec/unstable/rest/connections/">
+        /_irc/connections
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
               
     </li>
   
@@ -246,11 +275,12 @@
     <div class="wrapper">
 <nav id="TableOfContents">
 <ul>
-<li>
+<li><a href="#unstable-specification">Unstable specification</a>
 <ul>
-<li>
+<li><a href="#irc-protocol">IRC Protocol</a></li>
+<li><a href="#types">Types</a>
 <ul>
-<li><a href="#unstable-specification">Unstable specification</a></li>
+<li><a href="#client-ids">Client IDs</a></li>
 </ul></li>
 </ul></li>
 </ul>
@@ -274,10 +304,24 @@
 
 
 
-<h3 id="unstable-specification">Unstable specification</h3>
+<h1 id="unstable-specification">Unstable specification</h1>
 
-<p>This is the spec that is in use by bleeding edge implementations that has not been formally baked into a versioned
+<div class="notices warning" ><p>This is the spec that is in use by bleeding edge implementations that has not been formally baked into a versioned
 spec yet.</p>
+</div>
+
+
+<h2 id="irc-protocol">IRC Protocol</h2>
+
+<p>This specification does not currently specify a IRC protocol to follow when implementing the spec, and is left as an exercise for the service. It is the responsibility of the client to ensure the implementation they are using is correct for their environment.</p>
+
+<h2 id="types">Types</h2>
+
+<h3 id="client-ids">Client IDs</h3>
+
+<p>Client IDs are UUIDs that uniquely identify a IRC client and it&rsquo;s associated TCP connection. It <em>MUST</em> not be associated with the client&rsquo;s NICK for longer than the lifetime of the connection, as UUIDs are never reused.</p>
+
+<p>In the API, the key is called <code>client_id</code>;</p>
 
 
 <footer class=" footline" >
@@ -358,6 +402,22 @@ spec yet.</p>
                     
 
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -402,20 +462,20 @@ spec yet.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/irc-conntrack/js/clipboard.min.js?1538096605"></script>
-    <script src="/irc-conntrack/js/perfect-scrollbar.min.js?1538096605"></script>
-    <script src="/irc-conntrack/js/perfect-scrollbar.jquery.min.js?1538096605"></script>
-    <script src="/irc-conntrack/js/jquery.sticky.js?1538096605"></script>
-    <script src="/irc-conntrack/js/featherlight.min.js?1538096605"></script>
-    <script src="/irc-conntrack/js/html5shiv-printshiv.min.js?1538096605"></script>
-    <script src="/irc-conntrack/js/highlight.pack.js?1538096605"></script>
+    <script src="/irc-conntrack/js/clipboard.min.js?1538141740"></script>
+    <script src="/irc-conntrack/js/perfect-scrollbar.min.js?1538141740"></script>
+    <script src="/irc-conntrack/js/perfect-scrollbar.jquery.min.js?1538141740"></script>
+    <script src="/irc-conntrack/js/jquery.sticky.js?1538141740"></script>
+    <script src="/irc-conntrack/js/featherlight.min.js?1538141740"></script>
+    <script src="/irc-conntrack/js/html5shiv-printshiv.min.js?1538141740"></script>
+    <script src="/irc-conntrack/js/highlight.pack.js?1538141740"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/irc-conntrack/js/modernizr.custom.71422.js?1538096605"></script>
-    <script src="/irc-conntrack/js/learn.js?1538096605"></script>
-    <script src="/irc-conntrack/js/hugo-learn.js?1538096605"></script>
+    <script src="/irc-conntrack/js/modernizr.custom.71422.js?1538141740"></script>
+    <script src="/irc-conntrack/js/learn.js?1538141740"></script>
+    <script src="/irc-conntrack/js/hugo-learn.js?1538141740"></script>
 
-    <link href="/irc-conntrack/mermaid/mermaid.css?1538096605" type="text/css" rel="stylesheet" />
-    <script src="/irc-conntrack/mermaid/mermaid.js?1538096605"></script>
+    <link href="/irc-conntrack/mermaid/mermaid.css?1538141740" type="text/css" rel="stylesheet" />
+    <script src="/irc-conntrack/mermaid/mermaid.js?1538141740"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

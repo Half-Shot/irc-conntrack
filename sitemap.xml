@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  <url>
+    <loc>https://half-shot.github.io/irc-conntrack/categories/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://half-shot.github.io/irc-conntrack/</loc>
+  </url>
+  
+  <url>
+    <loc>https://half-shot.github.io/irc-conntrack/spec/unstable/rest/</loc>
+  </url>
+  
+  <url>
+    <loc>https://half-shot.github.io/irc-conntrack/spec/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://half-shot.github.io/irc-conntrack/tags/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://half-shot.github.io/irc-conntrack/spec/unstable/</loc>
+  </url>
+  
+  <url>
+    <loc>https://half-shot.github.io/irc-conntrack/spec/unstable/websocket/</loc>
+  </url>
+  
+</urlset>

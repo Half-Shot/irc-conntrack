@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en" class="js csstransforms3d">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Hugo 0.40.1" />
+    <meta name="description" content="">
+
+
+    <link rel="shortcut icon" href="/irc-conntrack/images/favicon.png" type="image/x-icon" />
+<link rel="icon" href="/irc-conntrack/images/favicon.png" type="image/x-icon" />
+    <title>REST :: IRC Conntrack Specification</title>
+
+    
+    <link href="/irc-conntrack/css/nucleus.css?1538096605" rel="stylesheet">
+    <link href="/irc-conntrack/css/fontawesome-all.min.css?1538096605" rel="stylesheet">
+    <link href="/irc-conntrack/css/hybrid.css?1538096605" rel="stylesheet">
+    <link href="/irc-conntrack/css/featherlight.min.css?1538096605" rel="stylesheet">
+    <link href="/irc-conntrack/css/perfect-scrollbar.min.css?1538096605" rel="stylesheet">
+    <link href="/irc-conntrack/css/auto-complete.css?1538096605" rel="stylesheet">
+    <link href="/irc-conntrack/css/theme.css?1538096605" rel="stylesheet">
+    <link href="/irc-conntrack/css/hugo-theme.css?1538096605" rel="stylesheet">
+    
+      <link href="/irc-conntrack/css/theme-blue.css?1538096605" rel="stylesheet">
+    
+
+    <script src="/irc-conntrack/js/jquery-2.x.min.js?1538096605"></script>
+
+    <style type="text/css">
+      :root #header + #content > #left > #rlblock_left{
+          display:none !important;
+      }
+      
+    </style>
+    
+  </head>
+  <body class="" data-url="/irc-conntrack/spec/unstable/rest/">
+    <nav id="sidebar" class="">
+
+
+
+  <div id="header-wrapper">
+    <div id="header">
+      <p style="font-family: mono; color: whitesmoke; font-weight: 600; font-size: 2em;"> irc-conntrack </p>
+    </div>
+    
+        <div class="searchbox">
+    <label for="search-by"><i class="fas fa-search"></i></label>
+    <input data-search-input id="search-by" type="text" placeholder="Search...">
+    <span data-search-clear=""><i class="fas fa-close"></i></span>
+</div>
+
+<script type="text/javascript" src="/irc-conntrack/js/lunr.min.js?1538096605"></script>
+<script type="text/javascript" src="/irc-conntrack/js/auto-complete.js?1538096605"></script>
+<script type="text/javascript">
+    
+        var baseurl = '\/irc-conntrack';
+    
+</script>
+<script type="text/javascript" src="/irc-conntrack/js/search.js?1538096605"></script>
+
+    
+  </div>
+
+    <div class="highlightable">
+    <ul class="topics">
+
+        
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/irc-conntrack/spec/" title="Specs" class="dd-item 
+        parent
+        
+        
+        ">
+      <a href="/irc-conntrack/spec/">
+          Specs
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/irc-conntrack/spec/unstable/" title="Unstable" class="dd-item 
+        parent
+        
+        
+        ">
+      <a href="/irc-conntrack/spec/unstable/">
+          Unstable
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/irc-conntrack/spec/unstable/rest/" title="REST" class="dd-item 
+        parent
+        active
+        
+        ">
+      <a href="/irc-conntrack/spec/unstable/rest/">
+          REST
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/irc-conntrack/spec/unstable/websocket/" title="Websocket" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/irc-conntrack/spec/unstable/websocket/">
+          Websocket
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+         
+    </ul>
+
+    
+    
+
+    
+    <section id="footer">
+      <p>Built with <a href="https://github.com/matcornic/hugo-theme-learn"><i class="fas fa-heart"></i></a> from <a href="http://getgrav.org">Grav</a> and <a href="http://gohugo.io/">Hugo</a></p>
+
+    </section>
+  </div>
+</nav>
+
+
+
+
+
+        <section id="body">
+        <div id="overlay"></div>
+        <div class="padding highlightable">
+              
+              <div>
+                <div id="top-bar">
+                
+                
+                <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
+                    <span id="sidebar-toggle-span">
+                        <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
+                          <i class="fas fa-bars"></i>
+                        </a>
+                    </span>
+                  
+                  <span id="toc-menu"><i class="fas fa-list-alt"></i></span>
+                  
+                  <span class="links">
+                    
+          
+          
+            
+            
+          
+          
+            
+            
+          
+          
+            
+            
+          
+          
+            <a href='/irc-conntrack/'>Home</a> > <a href='/irc-conntrack/spec/'>Specs</a> > <a href='/irc-conntrack/spec/unstable/'>Unstable</a> > REST
+          
+         
+          
+         
+          
+         
+          
+           
+                  </span>
+                </div>
+                
+                    <div class="progress">
+    <div class="wrapper">
+<nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li>
+<ul>
+<li><a href="#rest-specification-index">REST Specification Index</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+    </div>
+</div>
+
+                
+              </div>
+            </div>
+            
+
+        
+        <div id="body-inner">
+          
+            <h1>REST</h1>
+          
+
+        
+
+
+
+
+<h3 id="rest-specification-index">REST Specification Index</h3>
+
+
+<footer class=" footline" >
+	
+</footer>
+
+        
+        </div> 
+        
+
+      </div>
+
+    <div id="navigation">
+        
+        
+        
+        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+        
+        
+
+
+        
+            <a class="nav nav-prev" href="/irc-conntrack/spec/unstable/" title="Unstable"> <i class="fas fa-chevron-left"></i></a>
+        
+        
+            <a class="nav nav-next" href="/irc-conntrack/spec/unstable/websocket/" title="Websocket" style="margin-right: 0px;"><i class="fas fa-chevron-right"></i></a>
+        
+    </div>
+
+    </section>
+    
+    <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
+      <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
+    </div>
+    <script src="/irc-conntrack/js/clipboard.min.js?1538096605"></script>
+    <script src="/irc-conntrack/js/perfect-scrollbar.min.js?1538096605"></script>
+    <script src="/irc-conntrack/js/perfect-scrollbar.jquery.min.js?1538096605"></script>
+    <script src="/irc-conntrack/js/jquery.sticky.js?1538096605"></script>
+    <script src="/irc-conntrack/js/featherlight.min.js?1538096605"></script>
+    <script src="/irc-conntrack/js/html5shiv-printshiv.min.js?1538096605"></script>
+    <script src="/irc-conntrack/js/highlight.pack.js?1538096605"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script src="/irc-conntrack/js/modernizr.custom.71422.js?1538096605"></script>
+    <script src="/irc-conntrack/js/learn.js?1538096605"></script>
+    <script src="/irc-conntrack/js/hugo-learn.js?1538096605"></script>
+
+    <link href="/irc-conntrack/mermaid/mermaid.css?1538096605" type="text/css" rel="stylesheet" />
+    <script src="/irc-conntrack/mermaid/mermaid.js?1538096605"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+    
+
+  </body>
+</html>

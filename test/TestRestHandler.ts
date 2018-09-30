@@ -53,6 +53,7 @@ const createRestHandler = (doc: any = {}, connTracker: any = {}) => {
     if (!doc.access_token) {
         doc["access-token"] = "ValidToken";
     }
+    doc.metrics = {enabled: false};
     return new RestHandler(connTracker, {} as any, Config.fromDoc(doc));
 };
 
@@ -175,7 +176,7 @@ describe("RestHandler", () => {
         it("should get ids if no detail given", (done) => {
             const c = createRestHandler({}, {
                 getConnectionsForServer: (server: string, detail: string) => {
-                    expect(server).to.be.equal("mockserver");
+                    expect(server).to.be.equal("MockServer");
                     expect(detail).to.be.equal("ids");
                     return ["apple", "custard-cream"];
                 },
@@ -184,7 +185,7 @@ describe("RestHandler", () => {
             callbacks["get:/_irc/connections/:server"]({
                 query: { },
                 params: {
-                    server: "mockserver",
+                    server: "MockServer",
                 },
             }, {
                 send: (res: IConnectionsResponse) => {
@@ -196,7 +197,7 @@ describe("RestHandler", () => {
         it("should get state if detail given", (done) => {
             const c = createRestHandler({}, {
                 getConnectionsForServer: (server: string, detail: string) => {
-                    expect(server).to.be.equal("mockserver");
+                    expect(server).to.be.equal("MockServer");
                     expect(detail).to.be.equal("state");
                     return ["fake", "street"];
                 },
@@ -205,7 +206,7 @@ describe("RestHandler", () => {
             callbacks["get:/_irc/connections/:server"]({
                 query: { detail: "state" },
                 params: {
-                    server: "mockserver",
+                    server: "MockServer",
                 },
             }, {
                 send: (res: IConnectionsResponse) => {
@@ -229,7 +230,7 @@ describe("RestHandler", () => {
     });
     describe("updateConfig", () => {
         it("should fail if the config has no filename", (done) => {
-            const c = new RestHandler({} as any, {} as any, {} as any);
+            const c = createRestHandler();
             c.configure();
             const res = {
                 statusCode: -1,
@@ -244,6 +245,9 @@ describe("RestHandler", () => {
         it("should fail if the config is unparsable", (done) => {
             const c = new RestHandler({} as any, {} as any, {
                 filename: "definitelynotafile",
+                metrics: {
+                    enabled: false
+                },
             } as any);
             c.configure();
             const res = {
@@ -260,6 +264,9 @@ describe("RestHandler", () => {
         it("should fail if the config could not be applied", (done) => {
             const c = new RestHandler({} as any, {} as any, {
                 filename: "./test/config.sample.yaml",
+                metrics: {
+                    enabled: false
+                },
                 applyConfig : () => {
                     throw new Error("Test forced apply failure");
                 },
@@ -280,6 +287,9 @@ describe("RestHandler", () => {
             const c = new RestHandler({} as any, {} as any, {
                 rawDocument: {
                     magicFlag: true,
+                },
+                metrics: {
+                    enabled: false,
                 },
                 filename: "./test/config.sample.yaml",
                 applyConfig : (cfg: Config) => {

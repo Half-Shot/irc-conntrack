@@ -77,7 +77,7 @@ export class ConnectionTracker {
         const uuid = Uuid();
         log.verbose("Creating new connection with:", JSON.stringify(opts));
         const client = new IrcClient(uuid, opts);
-        await client.initiate(server)
+        await client.initiate(server);
         this.ircClients.set(uuid, client);
         let clientServerSet = this.serverClients.get(serverName);
         if (clientServerSet === undefined) {
@@ -93,7 +93,9 @@ export class ConnectionTracker {
     public runCommand(cmd: IWsCommand, ws: Ws) {
         const UUID_SHORT_LENGTH = 12;
         const ID_SHORT_LENGTH = 12;
-        log.info(`runCommand ${cmd.client_id.substr(0, UUID_SHORT_LENGTH)} ${cmd.id.substr(0, ID_SHORT_LENGTH)}`);
+        const SHORT_CLI_ID = cmd.client_id.substr(0, UUID_SHORT_LENGTH);
+        const SHORT_ID = cmd.id.substr(0, ID_SHORT_LENGTH);
+        log.info(`runCommand ${SHORT_CLI_ID} ${SHORT_ID} ${cmd.type}`);
         const client = this.ircClients.get(cmd.client_id);
         if (!client) {
             ws.send(JSON.stringify({id: cmd.id, errcode: ERRCODES.clientNotFound}));

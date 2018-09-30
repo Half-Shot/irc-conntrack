@@ -76,41 +76,38 @@ describe("IrcClient", () => {
         beforeEach(() => {
             return listener.spinUp();
         });
-        it("should handle simple PONG messages", () => {
-            const c = client = createClient();
-            const msgPromise = new Promise((resolve, reject) => {
-                c.on("raw", resolve);
-            });
+        it("should handle simple PING messages", () => {
+            client = createClient();
             client.initiate(MOCK_SERVER).then(() => {
-                listener.send(":irc.halfy.net PONG irc.halfy.net :LAG1536718080540\r\n");
+                listener.send(":irc.example.com PING :LAG1537227775684\r\n");
             });
-            return msgPromise.then((msg) => {
-                return expect(msg).to.not.be.undefined;
+
+            return listener.waitForData(1, 2000).then(() => {
+                const msgs = listener.dataRecieved.split("\r\n");
+                return expect(msgs.includes("PONG LAG1537227775684")).to.be.true;
             });
         });
         it("should handle a PING splt into chunks", () => {
             const MSG_DELAY = 250;
-            const c = client = createClient();
-            const msgPromise = new Promise((resolve, reject) => {
-                c.on("raw", resolve);
+            client = createClient();
+
+            const p = new Promise((resolve) => {
+                (client as IrcClient).msgEmitter.once("ping", resolve);
             });
             client.initiate(MOCK_SERVER).then(() => {
-                return listener.send(":irc.halfy.net PONG ");
+                return listener.send(":irc.halfy.net PING ");
             }).then(() => {
                 return new Promise((resolve) => setTimeout(resolve, MSG_DELAY));
             }).then(() => {
-                return listener.send("irc.halfy.net :LAG153");
+                return listener.send(":LAG153");
             }).then(() => {
-                listener.send("6718080540\r\n");
+                return listener.send("6718080540\r\n");
             });
-
-            return msgPromise.then((msg) => {
-                return expect(msg).to.not.be.undefined;
-            });
+            return p;
         });
         it("should error on exceeding buffer", () => {
             const c = client = createClient();
-            const FILL_SIZE = 980;
+            const FILL_SIZE = 1024 * 16;
             const msgPromise: Promise<Error> = new Promise((resolve, reject) => {
                 c.on("raw", () => { reject(new Error("Expected an error")); });
                 c.on("error", resolve);
@@ -127,8 +124,8 @@ describe("IrcClient", () => {
         it("should return a badFormat message", () => {
             const c = client = createClient();
             const msgPromise: Promise<IMessage> = new Promise((resolve, reject) => {
-                c.on("raw", resolve);
-                c.on("error", reject);
+                c.on("raw", reject);
+                c.on("badformat", resolve);
             });
             client.initiate(MOCK_SERVER).then(() => {
                 listener.send("   weeee\r\n");

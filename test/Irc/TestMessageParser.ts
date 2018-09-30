@@ -561,7 +561,7 @@ describe("MessageParser", () => {
         it("will ignore useless info", () => {
             const parser = createMessageParser();
             USELESS_MSGS.forEach((msg: IMessage) => {
-                expect(parser.actOnMessage(msg)).to.be.undefined;
+                expect(parser.actOnMessage(msg)).to.be.true;
             });
         });
         it("will emit on err_nicknameinuse", (done) => {

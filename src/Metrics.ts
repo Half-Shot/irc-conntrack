@@ -56,6 +56,7 @@ export class Metrics {
     private static websocketOpen = new Gauge(({
         name: "websocket_connections_open",
         help: "Number of active IRC connections",
+        labelNames: ["host"],
     }));
 
     private static websocketTx = new Counter(({

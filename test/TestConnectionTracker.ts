@@ -7,6 +7,7 @@ class MockIrcClient {
     public ircState: IrcState;
     public msgEmitter = {
         on: () => { /* stub */ },
+        once: () => { /* stub */ },
     };
     constructor(public uuid: string, opts: IrcConnectionOpts) {
         this.ircState = new IrcState();
@@ -172,10 +173,11 @@ describe("ConnectionTracker", () => {
             });
         });
         it("should send error if the command is not understood", async () => {
-            const t = await createConnectionTracker();
+            const t = await createConnectionTracker(1);
+            const clientId = t.getConnectionsForServer("foo", "ids")[0] as string;
             return new Promise((resolve) => {
                 t.runCommand(
-                    {client_id: "aaaa", content: "aaaa", type: "badcommand", id: "1"},
+                    {client_id: clientId, content: "aaaa", type: "badcommand", id: "1"},
                     {
                         send: (jsonError: string) => {
                             expect(jsonError).to.be.equal(`{"id":"1","errcode":"IC_COMMAND_NOT_RECOGNISED"}`);

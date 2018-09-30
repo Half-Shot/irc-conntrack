@@ -56,7 +56,7 @@ export class MockIrcd {
             this.dataPromiseTrigger = () => {
                 resolve();
                 this.dataPromiseTrigger = undefined;
-                clearTimeout(tOut);
+                clearTimeout(tOut as number);
             };
         });
     }
@@ -67,6 +67,11 @@ export class MockIrcd {
                 resolve();
             });
         });
+    }
+
+    public clear() {
+        this.dataCount = 0;
+        this.dataRecieved = "";
     }
 
     private onConnection(conn: Socket) {

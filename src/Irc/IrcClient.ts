@@ -346,7 +346,7 @@ export class IrcClient extends Socket {
         const DELIMITER = "\r\n";
         let finished;
         if (typeof (chunk) === "string") {
-            this.dataBuffer.write(chunk);
+            this.dataBuffer.write(chunk, this.dataBufferLength);
             finished = chunk.endsWith(DELIMITER);
         } else {
             chunk.copy(this.dataBuffer, this.dataBufferLength);
@@ -355,9 +355,11 @@ export class IrcClient extends Socket {
                 DELIMITER.charCodeAt(1),
             ]));
         }
+        this.log.silly(`RXPART:"${chunk}"`);
         this.dataBufferLength += chunk.length;
         if (this.dataBufferLength > BUFFER_SIZE) {
             this.dataBuffer.fill(0, 0);
+            this.dataBufferLength = 0;
             this.emit("error", "Buffer size limit reached for IRC message");
             return;
         }
@@ -386,7 +388,8 @@ export class IrcClient extends Socket {
             Metrics.ircMessagesReceived.inc();
             msg = parseMessage(line, this.ircOpts.stripColors);
             if (msg.badFormat) {
-                this.emit("error", new Error("Message was badly formatted"));
+                this.emit("badformat", msg);
+                return;
             }
             // We only emit raw if it's not been emitted via a dedicated event.
             if (!this.msgParser.actOnMessage(msg)) {

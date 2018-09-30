@@ -726,7 +726,6 @@ export class MessageParser extends EventEmitter {
                }
                this.log.verbose(`Unhandled ${msg.command} ${msg.rawCommand}`);
                return false;
-               break;
        }
         return true;
     }

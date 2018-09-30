@@ -58,15 +58,15 @@ export class RestHandler {
 
     private getConnections(req: Request, res: Response) {
         const detail = req.query.detail || "ids";
-        const conns = this.connTracker.getConnectionsForServer(req.params.server, detail);
-        if (conns.length === 0) {
+        if (!this.config.serverConfig(req.params.server)) {
             res.statusCode = HttpStatus.NOT_FOUND;
             res.send({
-                errcode: ERRCODES.clientNotFound,
-                error: "No clients found",
+                errcode: ERRCODES.notInConfig,
+                error: "Server not in config.",
             } as IErrorResponse);
             return;
         }
+        const conns = this.connTracker.getConnectionsForServer(req.params.server, detail);
         res.send({connections: conns} as IConnectionsResponse);
     }
 
@@ -77,6 +77,14 @@ export class RestHandler {
             undefined,
             req.params.id,
         );
+        if (!this.config.serverConfig(req.params.server)) {
+            res.statusCode = HttpStatus.NOT_FOUND;
+            res.send({
+                errcode: ERRCODES.notInConfig,
+                error: "Server not in config.",
+            } as IErrorResponse);
+            return;
+        }
         if (conn.length === 0) {
             res.statusCode = HttpStatus.NOT_FOUND;
             res.send({

@@ -70,7 +70,7 @@ describe("WebsockerHandler", () => {
         it("will broadcast to all open connctions", () => {
             const EXPECTED_LEN = 5;
             const msgs: IWsIrcMessage[] = [];
-            const conn = {send: (msg: IWsIrcMessage) => msgs.push(msg)};
+            const conn = {send: (msg: string) => msgs.push(JSON.parse(msg))};
             const handler = createWebsocketHandler();
             handler.addConnection("host#1", conn as any);
             handler.addConnection("host#2", conn as any);

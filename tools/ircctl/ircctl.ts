@@ -24,6 +24,19 @@ const COMMANDS = [
     "join", "part", "say", "action", "notice",
 ];
 
+function helpText() {
+    log.info(
+`help - This, obviously.
+list {detailed/ids} - List connected ids or detailed.
+filter {id} - Filter logs for just this ID.
+use {server} - Select a server to use for connections.
+connect {nick} {realname?} {username?} - Connect to the IRC server.
+say/action/notice {id} {channel} - Send a message.
+join {id} {channel} - Join a channel.
+part {id} {channel} - Part a channel.
+exit/quit - Quit the tool.`);
+}
+
 const listenFilter = {
     id: "",
 };
@@ -83,7 +96,27 @@ async function main(urlOrConfig: string, token: string, server?: string) {
         if (listenFilter.id && data.client_id !== listenFilter.id) {
             return;
         }
-        log.info(`New ${data.event} msg from ${data.client_id}:`, data.msg);
+        const msg: any = data.msg;
+        switch (data.event) {
+            case "privmsg":
+                log.info(`${msg.from}->${msg.to}: ${msg.text}`);
+                break;
+            case "join":
+                log.info(`${msg.nick} joined ${msg.channel}`);
+                break;
+            case "part":
+                log.info(`${msg.nick} leaving ${msg.channel}: ${msg.reason || ""}`);
+                break;
+            case "topic":
+                log.info(`Topic "${msg.topic}" set in ${msg.channel} by ${msg.topicBy}`);
+                break;
+            case "nick":
+                log.info(`${msg.nick}" changed nick to ${msg.newNick}`);
+                break;
+            default:
+                log.info(`New ${data.event} msg from ${data.client_id}:`, data.msg);
+                break;
+        }
     });
 
     client.once("open", () => {
@@ -146,7 +179,7 @@ async function handleCommand(args: string[], client: Ws, request: RequestAPI<any
             return;
         }
         clientId = c;
-        log.info(`Using ${clientId}`);
+        log.info(`Using client: ${clientId}`);
     }
     switch (args[0]) {
         case "quit":
@@ -161,7 +194,7 @@ async function handleCommand(args: string[], client: Ws, request: RequestAPI<any
             listenFilter.id = args[1];
         case "connect":
             if (args.length < 2) { // nick, realname, username
-                log.warn("Missing arg 'server'");
+                log.warn("Missing arg 'nickname'");
                 break;
             }
             request.post(`/_irc/connections/${currentIrcServer}/open`, {
@@ -195,11 +228,15 @@ async function handleCommand(args: string[], client: Ws, request: RequestAPI<any
             );
             break;
         case "help":
-            log.info("Help text coming soon... :)");
+            helpText();
             break;
         case "use":
+            if (args.length < 2) {
+                log.info(`Currenly using ${currentIrcServer}`);
+                break;
+            }
             currentIrcServer = args[1];
-            log.info(`Setting current server to ${currentIrcServer}`);
+            log.info(`Set current server to ${currentIrcServer}`);
             break;
         default:
             log.warn("Command not found");
@@ -229,7 +266,7 @@ async function handleList(args: string[], request: RequestAPI<any, any, any>) {
     if (detail === "state") {
         log.info("UUID | Nick | # Channels");
         (connections as IConnectionState[]).forEach((conn: IConnectionState) => {
-            log.info(`${conn.id.substr(0,12)}: ${conn.nick} ${(conn.chans as any).length}`);
+            log.info(`${conn.id.substr(0,12)}: ${conn.nick} ${(conn.channelList as any).length}`);
         });
     } else {
         log.info((connections as string[]).join(","));

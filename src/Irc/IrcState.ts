@@ -34,6 +34,7 @@ export class IrcState {
      */
     public requestedNickname: string;
     public chans: Map<string, IChannel>;
+    public registered: boolean = false;
 
     constructor() {
         this.motd = "";

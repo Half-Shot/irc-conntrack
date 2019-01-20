@@ -212,6 +212,11 @@ export class IrcClient extends Socket {
      * @param checkSupported Should we pre-emptively check if the name is supported by the server.
      */
     public async join(channel: string, checkSupported: boolean = true) {
+        // If we have joined, ignore.
+        if (this.state.chanData(channel)) {
+            return Promise.resolve();
+        }
+
         if (checkSupported) {
             if (!this.supported.channel.types.includes(channel[0])) {
                 throw new Error("Channel type not supported");
@@ -404,6 +409,7 @@ export class IrcClient extends Socket {
     }
 
     private async onRegistered() {
+        this.state.registered = true;
         await this.whois(this.state.nick);
         // TODO: Need to update nick, hostname and maxlinelength with this.
     }

@@ -5,4 +5,4 @@ servers:
       - localhost:6667
     ipv6: false
 metrics:
-    enabled: true
+    enabled: false

@@ -2,3 +2,12 @@ node_modules/
 .nyc/
 .nyc_output/
 build/
+
+.idea
+
+# Docs
+
+/content/
+/themes/
+/public/
+/layouts/

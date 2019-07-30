@@ -11,6 +11,7 @@ export const ERRCODES = {
     timeout: "IC_TIMEOUT",
     genericFail: "IC_FAILURE",
     clientNotFound: "IC_CLIENT_NOT_FOUND",
+    clientConflict: "IC_CLIENT_CONFLICT",
     connectionLimit: "IC_CONNECTION_LIMIT",
     commandNotRecognised: "IC_COMMAND_NOT_RECOGNISED",
 };

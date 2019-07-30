@@ -58,7 +58,8 @@ const createConnectionTracker = async (createClients: number = 0) => {
         } as any,
     );
     for (let i = 0; i < createClients; i++) {
-        const uuid = await t.openConnection("foo", {
+        const id = `@foobar${i}:testing`;
+        const uuid = await t.openConnection("foo", id, {
             nicknames: `GoodDog#${i}`,
             username: "",
             realname: "",
@@ -120,7 +121,7 @@ describe("ConnectionTracker", () => {
         it("should reject if server is not known", async () => {
             const t = await createConnectionTracker();
             try {
-                await t.openConnection("fakeserver", {
+                await t.openConnection("fakeserver", "fakeid", {
                     nicknames: `BadDog`,
                     username: "",
                     realname: "",
@@ -140,7 +141,7 @@ describe("ConnectionTracker", () => {
             const MAX_CLIENTS = 5;
             const t = await createConnectionTracker(MAX_CLIENTS);
             try {
-                await t.openConnection("foo", {
+                await t.openConnection("foo", "fakeid", {
                     nicknames: `BadDog`,
                     username: "",
                     realname: "",

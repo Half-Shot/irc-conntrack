@@ -274,7 +274,6 @@ export class IrcClient extends Socket {
         }
     }
 
-
     public say(target: string, text: string): Promise<void> {
         return this.speak("PRIVMSG", target, text);
     }
@@ -325,7 +324,6 @@ export class IrcClient extends Socket {
     //     if (parts[0] === 'PING' && type === 'privmsg' && parts.length > 1)
     //         this.ctcp(from, 'notice', text);
     // };
-
 
     private onConnected(): Promise<void> {
         // TODO: Webirc support.
@@ -439,5 +437,4 @@ export class IrcClient extends Socket {
         this.state.nick = this.state.requestedNickname;
         this.state.updateMaxLineLength();
     }
-
- }
+}

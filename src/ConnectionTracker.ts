@@ -60,7 +60,7 @@ export class ConnectionTracker {
         }) as IConnectionState[];
     }
 
-    public async openConnection(serverName: string, opts: IrcConnectionOpts): Promise<string> {
+    public async openConnection(serverName: string, id: string, opts: IrcConnectionOpts): Promise<string> {
         const server = this.config.serverConfig(serverName);
         if (server === undefined) {
             log.warn(`Connection was requested for unknown server ${serverName}`);
@@ -74,20 +74,24 @@ export class ConnectionTracker {
                 {error: "No more slots on this node", errcode: ERRCODES.connectionLimit} as IErrorResponse,
             );
         }
-        const uuid = Uuid();
         log.verbose("Creating new connection with:", JSON.stringify(opts));
-        const client = new IrcClient(uuid, opts);
+        if (this.ircClients.get(id)) {
+            return Promise.reject(
+                {error: "Id already has an open client", errcode: ERRCODES.clientConflict} as IErrorResponse,
+            );
+        }
+        const client = new IrcClient(id, opts);
         await client.initiate(server);
-        this.ircClients.set(uuid, client);
+        this.ircClients.set(id, client);
         let clientServerSet = this.serverClients.get(serverName);
         if (clientServerSet === undefined) {
             clientServerSet = new Set();
             this.serverClients.set(serverName, clientServerSet);
         }
-        clientServerSet.add(uuid);
+        clientServerSet.add(id);
         this.bindListenersForClient(client);
         Metrics.ircConnectionCountGauge.inc({server: serverName});
-        return uuid;
+        return id;
     }
 
     public runCommand(cmd: IWsCommand, ws: Ws) {

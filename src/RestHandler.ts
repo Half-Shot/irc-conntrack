@@ -39,7 +39,7 @@ export class RestHandler {
         this.app.use(express.json());
         this.app.use(this.logRequest.bind(this));
         this.app.use(this.checkToken.bind(this));
-        this.app.post("/_irc/connections/:server/open", this.openConnection.bind(this));
+        this.app.post("/_irc/connections/:server/open/:id", this.openConnection.bind(this));
         this.app.post("/_irc/connections/:server/:id/disconnect", this.disconnectConnection.bind(this));
         this.app.get("/_irc/connections/:server/:id", this.getConnection.bind(this));
         this.app.get("/_irc/connections/:server", this.getConnections.bind(this));
@@ -98,6 +98,7 @@ export class RestHandler {
 
     private openConnection(req: Request, res: Response) {
         this.connTracker.openConnection(req.params.server,
+            req.params.id,
             req.body as IrcConnectionOpts,
         ).then((id: string) => {
             res.statusCode = HttpStatus.OK;

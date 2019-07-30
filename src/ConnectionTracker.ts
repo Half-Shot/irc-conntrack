@@ -9,10 +9,12 @@ import * as Ws from "ws";
 import { IMessage } from "./Irc/IMessage";
 import {IWsCommand, IWsContentJoinPart, IWsContentSay} from "./WebsocketCommands";
 import {Metrics} from "./Metrics";
+import { IConntrackClient } from "./Client/IConntrackClient";
+import { TrackedClient } from "./Client/TrackedClient";
 
 const log = new Log("ConnTrack");
 
-export class ConnectionTracker {
+export class ConnectionTracker implements IConntrackClient {
     private ircClients: Map<string, IrcClient>;
     private serverClients: Map<string, Set<string>>;
 
@@ -116,6 +118,14 @@ export class ConnectionTracker {
         } else {
             ws.send(JSON.stringify({id: cmd.id, errcode: ERRCODES.commandNotRecognised}));
             return;
+        }
+    }
+
+    // For local clients
+    public getTrackedClient(server: string, id: string, connectionOpts?: IrcConnectionOpts | undefined)
+    : Promise<TrackedClient | null> {
+        if (this.getClient(server, id)) {
+            return new TrackedClient(server, id);
         }
     }
 

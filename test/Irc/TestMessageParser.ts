@@ -12,13 +12,9 @@ import { ITopic } from "../../src/Irc/Messages/ITopic";
 import { IJoin } from "../../src/Irc/Messages/IJoin";
 import { IPart } from "../../src/Irc/Messages/IPart";
 import { IKick } from "../../src/Irc/Messages/IKick";
-import { parse } from "url";
 import { IQuit } from "../../src/Irc/Messages/IQuit";
 import { IInvite } from "../../src/Irc/Messages/IInvite";
 import { ISupports } from "../../src/Irc/Messages/ISupports";
-import { define } from "mime";
-import { REQUEST_HEADER_FIELDS_TOO_LARGE } from "http-status-codes";
-import { parseTwoDigitYear } from "moment";
 
 const RPL_WELCOME_SRC = parseMessage(
     ":example.com 001 Halfyyy :Welcome to the network! Halfyyy!halfy@11.22.111.3\r\n",

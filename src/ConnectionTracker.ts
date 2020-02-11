@@ -9,6 +9,7 @@ import * as Ws from "ws";
 import { IMessage } from "./Irc/IMessage";
 import {IWsCommand, IWsContentJoinPart, IWsContentSay} from "./WebsocketCommands";
 import {Metrics} from "./Metrics";
+import { IPoolStream, IPoolStreamConnection } from "./IPoolStream";
 
 const log = new Log("ConnTrack");
 
@@ -16,10 +17,10 @@ export class ConnectionTracker {
     private ircClients: Map<string, IrcClient>;
     private serverClients: Map<string, Set<string>>;
 
-    constructor(private config: Config, private wsHandler: WebsocketHandler) {
+    constructor(private config: Config, private poolStream: IPoolStream) {
         this.ircClients = new Map();
         this.serverClients = new Map();
-        wsHandler.on("command", this.runCommand.bind(this));
+        poolStream.on("command", this.runCommand.bind(this));
     }
 
     public getClient(serverName: string, id: string): IrcClient|undefined {
@@ -90,7 +91,7 @@ export class ConnectionTracker {
         return uuid;
     }
 
-    public runCommand(cmd: IWsCommand, ws: Ws) {
+    public runCommand(cmd: IWsCommand, ws: IPoolStreamConnection) {
         const UUID_SHORT_LENGTH = 12;
         const ID_SHORT_LENGTH = 12;
         const SHORT_CLI_ID = cmd.client_id.substr(0, UUID_SHORT_LENGTH);
@@ -125,7 +126,7 @@ export class ConnectionTracker {
             client.removeAllListeners();
         });
         client.on("raw", (msg: IMessage) => {
-            this.wsHandler.onIrcMessage("raw", client.uuid, msg);
+            this.poolStream.onIrcMessage("raw", client.uuid, msg);
         });
         client.on("error", (e: string) => {
             log.error("Client emitted an ERROR:", e);
@@ -152,7 +153,7 @@ export class ConnectionTracker {
         ];
         LISTEN_FOR.forEach((eventName) => {
             emitter.on(eventName, (arg) => {
-                this.wsHandler.onIrcMessage(eventName, client.uuid, arg);
+                this.poolStream.onIrcMessage(eventName, client.uuid, arg);
             });
         });
     }

@@ -4,6 +4,7 @@
   "description": "A suitably dumb irc connection tracker.",
   "main": "index.js",
   "scripts": {
+    "postinstall": "npm run build",
     "build": "tsc",
     "lint": "tslint --project tsconfig.json --format stylish",
     "start": "node build/src/Program.js",

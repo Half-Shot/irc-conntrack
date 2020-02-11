@@ -13,19 +13,27 @@ import { IOpenResponse } from "./Rest/IOpenResponse";
 import { IrcConnectionOpts } from "./Irc/IrcClient";
 import * as HttpStatus from "http-status-codes";
 import {Metrics} from "./Metrics";
+import * as childProcess from "child_process";
+import { IVersions } from "./Rest/IVersions";
 
 const log = new Log("RestHandler");
 const logHttp = new Log("http");
 
 export class RestHandler {
     private app?: Application;
-
+    private versionString: string;
     constructor(
         private connTracker: ConnectionTracker,
         private wsHandler: WebsocketHandler,
         private config: Config,
     ) {
-
+        this.versionString = require("./package.json").version;
+        childProcess.exec("git rev-parse HEAD", (err, stdout) => {
+            if (err) {
+                return;
+            }
+            this.versionString += ` git:${stdout}`;
+        });
     }
 
     public configure() {
@@ -39,6 +47,7 @@ export class RestHandler {
         this.app.use(express.json());
         this.app.use(this.logRequest.bind(this));
         this.app.use(this.checkToken.bind(this));
+        this.app.use("/_irc/version", this.getVersions.bind(this));
         this.app.post("/_irc/connections/:server/open", this.openConnection.bind(this));
         this.app.post("/_irc/connections/:server/:id/disconnect", this.disconnectConnection.bind(this));
         this.app.get("/_irc/connections/:server/:id", this.getConnection.bind(this));
@@ -46,6 +55,10 @@ export class RestHandler {
         this.app.ws("/_irc/ws", this.openWebsocket.bind(this));
         this.app.get("/_irc/config", this.readConfig.bind(this));
         this.app.post("/_irc/config", this.updateConfig.bind(this));
+    }
+
+    public getVersions(req: Request, res: Response) {
+        res.send({name: "irc-conntrack", version: this.versionString} as IVersions);
     }
 
     public listen() {

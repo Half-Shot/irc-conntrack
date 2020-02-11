@@ -29,7 +29,6 @@
  */
 
 import { IMessage } from "./IMessage";
-import { IrcClient } from "./IrcClient";
 import { IrcState, IChannelListItem } from "./IrcState";
 import { Log } from "../Log";
 import { EventEmitter } from "events";
@@ -46,7 +45,7 @@ import { IKick } from "./Messages/IKick";
 import { IQuit } from "./Messages/IQuit";
 import { IInvite } from "./Messages/IInvite";
 import { ISupports } from "./Messages/ISupports";
-import {IError} from "./Messages/IError";
+import { IError  } from "./Messages/IError";
 
 /**
  * This class parses IRC messages and emits an event out where possible.
@@ -73,7 +72,7 @@ import {IError} from "./Messages/IError";
  * join | channel.users | IJoin
  * part | channel.users | IPart
  * kick | channel.users | IKick
- * notice           | N/A | INotice
+ * notice | N/A | INotice
  * privmsg | N/A | INotice
  * kill | N/A | IQuit
  * quit | N/A | IQuit
@@ -195,7 +194,7 @@ export class MessageParser extends EventEmitter {
                             this.supported.maxtargets[targMax[0]] = target;
                         });
                         break;
-                    case "TOPI\CLEN":
+                    case "TOPICLEN":
                         this.supported.topiclength = parseInt(value);
                         break;
                 }

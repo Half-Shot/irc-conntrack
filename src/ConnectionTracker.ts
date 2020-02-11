@@ -1,14 +1,12 @@
 import { Config } from "./Config";
-import { WebsocketHandler } from "./WebsocketHandler";
 import { IConnectionState } from "./Rest/IConnectionsResponse";
 import { IrcClient, IrcConnectionOpts } from "./Irc/IrcClient";
 import * as Uuid from "uuid/v4";
 import { IErrorResponse, ERRCODES } from "./Rest/IErrorResponse";
 import { Log } from "./Log";
-import * as Ws from "ws";
 import { IMessage } from "./Irc/IMessage";
-import {IWsCommand, IWsContentJoinPart, IWsContentSay} from "./WebsocketCommands";
-import {Metrics} from "./Metrics";
+import { IWsCommand, IWsContentJoinPart, IWsContentSay } from "./WebsocketCommands";
+import { Metrics } from "./Metrics";
 import { IPoolStream, IPoolStreamConnection } from "./IPoolStream";
 
 const log = new Log("ConnTrack");

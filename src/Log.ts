@@ -48,9 +48,7 @@ export class Log {
         }));
         Log.logger = createLogger({
             format: format.combine(
-                format.timestamp({
-                    format: Log.now,
-                }),
+                format.timestamp(),
                 format.colorize(),
                 FORMAT_FUNC,
             ),

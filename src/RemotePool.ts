@@ -11,7 +11,7 @@ import { IVersions } from "./Rest/IVersions";
  * Implements a pool interface to a remote irc-conntrack service.
  */
 
-export class RemotePool implements IClientPool {
+export class RemotePool {
     // tslint:disable-next-line:no-any
     private r: RequestAPI<RequestPromise<any>, RequestPromiseOptions, request.RequiredUriUrl>;
 
@@ -37,10 +37,10 @@ export class RemotePool implements IClientPool {
     }
 
     public getClientById(servername: string, id: string) {
-        this.r.get(`connections/${encodeURIComponent(servername)}/${id}`);
+        // this.r.get(`connections/${encodeURIComponent(servername)}/${id}`);
     }
 
     public getConnections(servername: string, detail: "state"|"ids" = "state") {
-        return this.tracker.getConnectionsForServer(servername, detail);
+        // return this.tracker.getConnectionsForServer(servername, detail);
     }
 }

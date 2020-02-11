@@ -69,7 +69,9 @@ describe("IrcClient", () => {
                 throw e;
             }
             expect(listener.connections).to.equal(1);
-            expect(listener.dataRecieved).to.equal("NICK myname\r\nUSER foouser 8 * :Mr Foo\r\n");
+            expect(listener.dataRecieved).to.equal(
+                "CAP REQ message-tags\r\nCAP REQ echo-message\r\nNICK myname\r\nUSER foouser 8 * :Mr Foo\r\n"
+            );
         });
     });
     describe("onData", () => {

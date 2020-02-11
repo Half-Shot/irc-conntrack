@@ -90,6 +90,7 @@ export class IrcClient extends Socket {
             if (supports.supports === "sasl") {
                 this.send("AUTHENTICATE", "PLAIN");
             }
+            this.log.info(`Server reports that it supports ${supports.supports}`);
         });
         this.msgParser.on("auth", (plus) => {
             if (plus !== "+") {
@@ -336,6 +337,9 @@ export class IrcClient extends Socket {
             this.log.info("Using provided password");
             sendPromises.push(this.send("PASS", this.ircOpts.password));
         }
+        // These two are needed for msgid support.
+        sendPromises.push(this.send("CAP REQ", "message-tags"));
+        sendPromises.push(this.send("CAP REQ", "echo-message"));
         sendPromises.push(this.send("NICK", this.state.requestedNickname));
         // Assume this is the case unless we are told otherwise.
         this.state.nick = this.state.requestedNickname;

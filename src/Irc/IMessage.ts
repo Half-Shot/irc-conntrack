@@ -17,6 +17,7 @@ export interface IMessage {
     rawLine?: string;
     server?: string;
     args: string[];
+    tags?: {[key: string]: string };
     badFormat: boolean;
 }
 
@@ -44,11 +45,15 @@ export function parseMessage(line: string, stripColors: boolean = true): IMessag
         line = ircColors.stripColorsAndStyle(line);
     }
 
-    // Parse prefix
-    match = line.match(/^:([^ ]+) +/);
+    const LINE_REGEX = /^(@(\w+\=[^; ]*;?)* )?:([^ ]+) +/;
+    match = line.match(LINE_REGEX);
     if (match) {
-        message.prefix = match[1];
-        line = line.replace(/^:[^ ]+ +/, "");
+        // https://ircv3.net/specs/extensions/message-tags
+        if (match[1]) {
+            message.tags = parseTags(match[1]);
+        }
+        message.prefix = match[3];
+        line = line.replace(LINE_REGEX, "");
         match = message.prefix.match(/^([_a-zA-Z0-9\[\]\\`^{}|-]*)(!([^@]+)@(.*))?$/);
         if (match) {
             message.nick = match[I_NICK];
@@ -103,4 +108,14 @@ export function parseMessage(line: string, stripColors: boolean = true): IMessag
     }
 
     return message;
+}
+
+function parseTags(tagString: string): {[key: string]: string} {
+    const map: {[key: string]: string} = {};
+    tagString = tagString.substr(1, tagString.length - 2); // Remove the @ and final space
+    tagString.split(";").forEach((tag) => {
+        const parts = tag.split("=");
+        map[parts[0]] = parts[1];
+    });
+    return map;
 }

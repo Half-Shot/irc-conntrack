@@ -483,9 +483,9 @@ export class MessageParser extends EventEmitter {
 
     private onCap(msg: IMessage) {
         if (msg.args[0] === "*" &&
-        msg.args[1] === "ACK" &&
-        msg.args[2].trim() === "sasl") { // there"s a space after sasl
-            this.emit("supports", {supports: "sasl"} as ISupports);
+        msg.args[1] === "ACK") {
+            const supports = msg.args[2].trim(); // there"s a space after sasl
+            this.emit("supports", {supports} as ISupports);
         }
     }
 

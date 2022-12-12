@@ -26,7 +26,7 @@
   "dependencies": {
     "@types/inquirer": "^6.5.0",
     "commander": "^4.1.1",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "express-ws": "^4.0.0",
     "http-status-codes": "^1.4.0",
     "inquirer": "^7.0.4",
